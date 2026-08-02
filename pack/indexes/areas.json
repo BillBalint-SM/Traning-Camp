@@ -41,6 +41,22 @@
       "module_ids": ["decision-guide.sft-or-rl", "pattern.experience-driven-improvement", "procedure.agent-evaluation-loop", "procedure.evaluation-environment-design", "pattern.task-distribution-coverage", "checklist.agent-observability", "decision-guide.metric-selection", "procedure.ablation-and-experiment-loop", "pattern.sft-rl-learning-boundary", "principle.environment-data-before-algorithm", "procedure.continual-improvement-release-loop", "experiment.task-success-baseline", "checklist.evaluation-environment-components", "procedure.tool-evaluation-environment", "procedure.hci-evaluation-environment", "procedure.evaluation-task-specification", "pattern.task-complexity-ladder", "checklist.objective-verifiability", "procedure.dataset-quality-loop", "concept.evaluation-metric-stack", "procedure.llm-judge-calibration", "procedure.pairwise-model-ranking", "decision-guide.model-selection-dimensions", "procedure.agent-cost-analysis", "procedure.statistical-significance-check", "procedure.benchmark-error-analysis", "procedure.improvement-hypothesis-roadmap", "pattern.two-layer-feature-flags", "procedure.prompt-sensitivity-assessment", "checklist.privacy-aware-analytics", "decision-guide.simulation-fidelity", "pattern.domain-randomization"]
     },
     {
+      "id": "model-post-training",
+      "title": "Modell-utótanítás",
+      "aliases": ["modell-utótanítás", "SFT RL", "folyamatjutalmat", "eredményjutalmat", "tool callingot", "jutalomjel", "desztilláció"],
+      "summary": "Súlyszintű viselkedésfejlesztés demonstrációval, jutalommal, környezettel és ellenőrzött tanítási adattal.",
+      "decision_boundary": "Akkor válaszd, ha a modell paramétereinek tartós módosításáról, tanítási jeléről vagy tréningkörnyezetéről van szó.",
+      "module_ids": ["concept.three-stage-model-development", "principle.sft-behavior-imitation", "decision-guide.sft-before-rl", "concept.agent-environment-learning-loop", "concept.variable-length-agent-policy", "procedure.sft-data-pipeline", "decision-guide.post-training-method-selection", "concept.preference-modeling", "decision-guide.rl-algorithm-selection", "principle.training-environment-data-priority", "pattern.model-simulated-environment", "checklist.training-data-quality", "concept.multi-turn-credit-assignment", "decision-guide.reward-signal-density", "decision-guide.process-or-outcome-reward", "pattern.outcome-reward-process-constraints", "procedure.tool-call-reinforcement-learning", "pattern.on-policy-distillation", "pattern.on-policy-self-distillation", "checklist.post-training-readiness"]
+    },
+    {
+      "id": "continual-evolution",
+      "title": "Folyamatos agentfejlődés",
+      "aliases": ["folyamatos fejlődés", "operatív trajektóriákból", "tapasztalatot", "görgessem vissza", "offline konszolidáció", "önfejlődés"],
+      "summary": "Operatív tapasztalat ellenőrzött emelése tudásba, instrukcióba, programba vagy paraméterbe.",
+      "decision_boundary": "Akkor válaszd, ha valódi futások tanulságából kell visszafordítható és validált képességjavítást készíteni.",
+      "module_ids": ["concept.operational-trajectory-learning-signal", "decision-guide.experience-encoding-layer", "procedure.knowledge-consolidation-from-experience", "procedure.instruction-evolution", "procedure.programmatic-skill-evolution", "procedure.parameter-update-from-experience", "principle.meta-evolution", "pattern.continual-evolution-closed-loop", "procedure.failure-diagnosis-to-improvement", "procedure.evolution-validation-release-rollback", "checklist.verifiable-improvement-boundary", "checklist.continual-evolution-safety", "pattern.offline-consolidation-cycle"]
+    },
+    {
       "id": "interaction-and-collaboration",
       "title": "Interakció és együttműködés",
       "aliases": ["multimodális", "hang", "gui", "több agent", "együttműködés", "átadás", "konkurencia"],
