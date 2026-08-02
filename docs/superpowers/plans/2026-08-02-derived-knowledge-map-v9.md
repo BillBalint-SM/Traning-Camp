@@ -62,7 +62,7 @@
 - [x] Write through a sibling temporary directory, verify every output, then rename to the non-existing target.
 - [x] On failure, remove only the exact temporary directory created by the current invocation.
 - [x] Run focused tests and Ruff until green.
-- [ ] Commit the builder as one cohesive change.
+- [x] Commit the builder as one cohesive change.
 
 ---
 
@@ -72,11 +72,11 @@
 - Modify: `forge/src/knowledge_forge/cli.py`
 - Modify: `tests/test_cli_package.py`
 
-- [ ] Add RED tests for success, existing output, absolute path, traversal, output outside `derived/`, symlink output, and symlink ancestor.
-- [ ] Add `build-knowledge-map-projection --workspace --pack --schemas --output`.
-- [ ] Resolve package/schema paths within the workspace and validate output lexically and physically beneath `derived/`.
-- [ ] Preserve actionable `KnowledgeForgeError` to exit-code-2 behavior without absolute-path leakage.
-- [ ] Run focused CLI tests, the complete CLI suite, and Ruff.
+- [x] Add RED tests for success, existing output, absolute path, traversal, output outside `derived/`, symlink output, and symlink ancestor.
+- [x] Add `build-knowledge-map-projection --workspace --pack --schemas --output`.
+- [x] Resolve package/schema paths within the workspace and validate output lexically and physically beneath `derived/`.
+- [x] Preserve actionable `KnowledgeForgeError` to exit-code-2 behavior without absolute-path leakage.
+- [x] Run focused CLI tests, the complete CLI suite, and Ruff.
 - [ ] Commit the CLI boundary.
 
 ---

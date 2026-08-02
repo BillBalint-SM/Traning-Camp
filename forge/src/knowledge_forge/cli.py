@@ -20,10 +20,15 @@ from knowledge_forge.io import (
     write_json_atomic,
     write_jsonl_atomic,
 )
+from knowledge_forge.knowledge_map import build_knowledge_map_projection
 from knowledge_forge.models import ExtractedDocument, InputRecord, PdfProbe
 from knowledge_forge.normalize import normalize_documents
 from knowledge_forge.package import build_package, validate_package
-from knowledge_forge.paths import resolve_regular_within, resolve_within
+from knowledge_forge.paths import (
+    resolve_new_directory_within,
+    resolve_regular_within,
+    resolve_within,
+)
 from knowledge_forge.pdf_probe import DEFAULT_PDF_LIMITS, probe_pdf
 from knowledge_forge.provenance import build_provenance_ledger
 from knowledge_forge.routing import route_query
@@ -128,6 +133,14 @@ def _parser() -> argparse.ArgumentParser:
     routing_evaluation_parser.add_argument("--schemas", type=Path, required=True)
     routing_evaluation_parser.add_argument("--suite", type=Path, required=True)
     routing_evaluation_parser.add_argument("--report", type=Path, required=True)
+
+    knowledge_map_parser = subparsers.add_parser(
+        "build-knowledge-map-projection"
+    )
+    _add_workspace(knowledge_map_parser)
+    knowledge_map_parser.add_argument("--pack", type=Path, required=True)
+    knowledge_map_parser.add_argument("--schemas", type=Path, required=True)
+    knowledge_map_parser.add_argument("--output", type=Path, required=True)
     return parser
 
 
@@ -275,6 +288,18 @@ def _dispatch(namespace: argparse.Namespace) -> int:
                 "Routing evaluation suite",
             ),
             resolve_within(workspace_root, namespace.report),
+        )
+        return 0
+    if namespace.command == "build-knowledge-map-projection":
+        build_knowledge_map_projection(
+            resolve_within(workspace_root, namespace.pack),
+            resolve_within(workspace_root, namespace.schemas),
+            resolve_new_directory_within(
+                workspace_root,
+                namespace.output,
+                Path("derived"),
+                "Knowledge map output",
+            ),
         )
         return 0
     raise KnowledgeForgeError(f"Unsupported command: {namespace.command}")

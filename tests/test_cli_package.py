@@ -543,3 +543,116 @@ def test_cli_rejects_routing_suite_symlink(tmp_path: Path, capsys: object) -> No
 
     assert run(_routing_evaluation_arguments(workspace)) == 2
     assert "must not be a symbolic link" in capsys.readouterr().err
+
+
+def _knowledge_map_arguments(workspace: Path) -> list[str]:
+    return [
+        "build-knowledge-map-projection",
+        "--workspace",
+        str(workspace),
+        "--pack",
+        "pack",
+        "--schemas",
+        "forge/schemas",
+        "--output",
+        "derived/knowledge-map",
+    ]
+
+
+def test_cli_builds_knowledge_map_projection(tmp_path: Path) -> None:
+    workspace = _workspace(tmp_path)
+
+    assert run(_knowledge_map_arguments(workspace)) == 0
+
+    output_root = workspace / "derived" / "knowledge-map"
+    manifest = json.loads(
+        (output_root / "projection.json").read_text(encoding="utf-8")
+    )
+    assert manifest["article_count"] == 193
+    assert manifest["area_count"] == 10
+    assert manifest["relation_count"] == 196
+    assert len(list((output_root / "wiki/modules").glob("*.md"))) == 193
+
+
+def test_cli_rejects_existing_knowledge_map_output(
+    tmp_path: Path, capsys: object
+) -> None:
+    workspace = _workspace(tmp_path)
+    output_root = workspace / "derived" / "knowledge-map"
+    output_root.mkdir(parents=True)
+
+    assert run(_knowledge_map_arguments(workspace)) == 2
+    assert "already exists" in capsys.readouterr().err
+
+
+def test_cli_rejects_absolute_knowledge_map_output(
+    tmp_path: Path, capsys: object
+) -> None:
+    workspace = _workspace(tmp_path)
+    arguments = _knowledge_map_arguments(workspace)
+    arguments[arguments.index("--output") + 1] = str(
+        (workspace / "derived/knowledge-map").resolve()
+    )
+
+    assert run(arguments) == 2
+    assert "Path must be relative" in capsys.readouterr().err
+
+
+def test_cli_rejects_escaping_knowledge_map_output(
+    tmp_path: Path, capsys: object
+) -> None:
+    workspace = _workspace(tmp_path)
+    arguments = _knowledge_map_arguments(workspace)
+    arguments[arguments.index("--output") + 1] = "../knowledge-map"
+
+    assert run(arguments) == 2
+    assert "Path escapes workspace root" in capsys.readouterr().err
+
+
+def test_cli_rejects_knowledge_map_output_outside_derived(
+    tmp_path: Path, capsys: object
+) -> None:
+    workspace = _workspace(tmp_path)
+    arguments = _knowledge_map_arguments(workspace)
+    arguments[arguments.index("--output") + 1] = "maps/knowledge-map"
+
+    assert run(arguments) == 2
+    assert "must be inside derived" in capsys.readouterr().err
+
+
+def test_cli_rejects_knowledge_map_output_symlink(
+    tmp_path: Path, capsys: object
+) -> None:
+    workspace = _workspace(tmp_path)
+    derived_root = workspace / "derived"
+    derived_root.mkdir()
+    target_root = derived_root / "target"
+    target_root.mkdir()
+    output_root = derived_root / "knowledge-map"
+    try:
+        output_root.symlink_to(target_root, target_is_directory=True)
+    except OSError:
+        pytest.skip("Symlink creation is unavailable")
+
+    assert run(_knowledge_map_arguments(workspace)) == 2
+    assert "must not contain a symbolic link" in capsys.readouterr().err
+
+
+def test_cli_rejects_knowledge_map_symlink_ancestor(
+    tmp_path: Path, capsys: object
+) -> None:
+    workspace = _workspace(tmp_path)
+    derived_root = workspace / "derived"
+    derived_root.mkdir()
+    real_parent = workspace / "real-parent"
+    real_parent.mkdir()
+    linked_parent = derived_root / "linked"
+    try:
+        linked_parent.symlink_to(real_parent, target_is_directory=True)
+    except OSError:
+        pytest.skip("Symlink creation is unavailable")
+    arguments = _knowledge_map_arguments(workspace)
+    arguments[arguments.index("--output") + 1] = "derived/linked/knowledge-map"
+
+    assert run(arguments) == 2
+    assert "must not contain a symbolic link" in capsys.readouterr().err
