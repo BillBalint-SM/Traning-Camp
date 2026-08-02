@@ -24,6 +24,18 @@ def test_validate_package_accepts_clean_package() -> None:
     assert manifest["files"]
 
 
+def test_package_text_files_use_lf_bytes_for_manifest_portability() -> None:
+    crlf_paths = [
+        path.relative_to(PACK_ROOT).as_posix()
+        for path in sorted(PACK_ROOT.rglob("*"))
+        if path.is_file()
+        and path.suffix in {".json", ".md"}
+        and b"\r\n" in path.read_bytes()
+    ]
+
+    assert crlf_paths == []
+
+
 def test_validate_package_rejects_undeclared_file(tmp_path: Path) -> None:
     package_root = _copy_clean_package(tmp_path)
     (package_root / "knowledge" / "unlisted.md").write_text("x", encoding="utf-8")
