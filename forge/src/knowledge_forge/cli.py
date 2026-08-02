@@ -4,11 +4,13 @@ from pathlib import Path
 from typing import cast
 
 from knowledge_forge.archive import build_archive
+from knowledge_forge.audit import inspect_package, verify_promotion_coverage
 from knowledge_forge.epub import extract_epub
 from knowledge_forge.errors import KnowledgeForgeError
 from knowledge_forge.indexes import load_indexes
 from knowledge_forge.intake import intake_file, upsert_input_record
 from knowledge_forge.io import (
+    canonical_json_bytes,
     read_json,
     read_jsonl,
     write_json_atomic,
@@ -90,6 +92,19 @@ def _parser() -> argparse.ArgumentParser:
     archive_package_parser.add_argument("--schemas", type=Path, required=True)
     archive_package_parser.add_argument("--markers", type=Path, required=True)
     archive_package_parser.add_argument("--archive", type=Path, required=True)
+
+    inspect_package_parser = subparsers.add_parser("inspect-package")
+    _add_workspace(inspect_package_parser)
+    inspect_package_parser.add_argument("--pack", type=Path, required=True)
+    inspect_package_parser.add_argument("--schemas", type=Path, required=True)
+
+    coverage_parser = subparsers.add_parser("verify-promotion-coverage")
+    _add_workspace(coverage_parser)
+    coverage_parser.add_argument("--pack", type=Path, required=True)
+    coverage_parser.add_argument("--schemas", type=Path, required=True)
+    coverage_parser.add_argument("--units", type=Path, required=True)
+    coverage_parser.add_argument("--reviews", type=Path, required=True)
+    coverage_parser.add_argument("--report", type=Path, required=True)
     return parser
 
 
@@ -199,6 +214,22 @@ def _dispatch(namespace: argparse.Namespace) -> int:
             resolve_within(workspace_root, namespace.archive),
             resolve_within(workspace_root, namespace.schemas),
             _load_markers(resolve_within(workspace_root, namespace.markers)),
+        )
+        return 0
+    if namespace.command == "inspect-package":
+        profile = inspect_package(
+            resolve_within(workspace_root, namespace.pack),
+            resolve_within(workspace_root, namespace.schemas),
+        )
+        print(canonical_json_bytes(profile).decode("utf-8"), end="")
+        return 0
+    if namespace.command == "verify-promotion-coverage":
+        verify_promotion_coverage(
+            resolve_within(workspace_root, namespace.pack),
+            resolve_within(workspace_root, namespace.schemas),
+            resolve_within(workspace_root, namespace.units),
+            resolve_within(workspace_root, namespace.reviews),
+            resolve_within(workspace_root, namespace.report),
         )
         return 0
     raise KnowledgeForgeError(f"Unsupported command: {namespace.command}")
