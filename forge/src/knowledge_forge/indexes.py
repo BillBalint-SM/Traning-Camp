@@ -66,9 +66,7 @@ def _module_descriptor(module: KnowledgeModule) -> dict[str, object]:
     return {
         "id": metadata["id"],
         "title": metadata["title"],
-        "kind": metadata["kind"],
         "maturity": metadata["maturity"],
-        "confidence": metadata["confidence"],
         "tags": sorted(metadata["tags"]),
         "aliases": sorted(metadata["aliases"]),
     }

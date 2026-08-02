@@ -6,7 +6,7 @@ maturity: reviewed
 confidence: high
 language: hu
 tags: [retrieval, hybrid-retrieval, search, knowledge]
-aliases: [retrieval stratégia választás, hibrid retrieval]
+aliases: [retrieval stratégia választás, hibrid retrieval, hibrid retrievalt visszakereséséhez]
 relations:
   - type: depends_on
     target: procedure.retrieval-pipeline-design

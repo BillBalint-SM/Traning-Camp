@@ -3,26 +3,26 @@
     {
       "id": "core-agent-systems",
       "title": "Agent alaprendszerek",
-      "aliases": ["működési modell", "harness", "workflow", "autonóm döntéshozatal"],
+      "aliases": ["működési modell", "harness", "workflow", "autonóm döntéshozatal", "modellt agenthez"],
       "summary": "Az agent felépítése, futtatási kerete, állapotkezelése és döntési módja.",
       "decision_boundary": "Akkor válaszd, ha a feladat modell, kontextus, eszköz és orchestration együttműködéséről szól.",
-      "module_ids": ["principle.agent-operating-model", "principle.harness-engineering", "pattern.react-observe-act-loop", "decision-guide.workflow-or-autonomy", "checklist.agent-task-contract", "pattern.agent-status-representation", "failure-mode.model-only-system-design"]
+      "module_ids": ["principle.agent-operating-model", "principle.harness-engineering", "pattern.react-observe-act-loop", "decision-guide.workflow-or-autonomy", "checklist.agent-task-contract", "pattern.agent-status-representation", "failure-mode.model-only-system-design", "concept.observation-action-interface", "decision-guide.agent-model-selection", "checklist.harness-function-coverage", "procedure.guardrail-design", "procedure.human-escalation-design"]
     },
     {
       "id": "context-and-knowledge",
       "title": "Kontextus és tudás",
-      "aliases": ["kontextus", "memória", "keresés", "tömörítés", "kontextustömörítés", "retrieval", "visszakeresés", "hibrid"],
-      "summary": "A releváns információ kiválasztása, megőrzése, gyorsítótárazása, tömörítése és visszakeresése.",
-      "decision_boundary": "Akkor válaszd, ha a kérdés a kontextuskeretről, memóriáról, tudásindexről vagy visszakeresésről szól.",
-      "module_ids": ["decision-guide.memory-vs-retrieval", "pattern.context-budget-allocation", "pattern.context-compression", "principle.context-is-finite", "procedure.user-memory-lifecycle", "concept.context-cache-architecture", "procedure.system-prompt-architecture", "checklist.prompt-injection-boundary", "pattern.dynamic-skill-loading", "pattern.hierarchical-context-compression", "procedure.retrieval-pipeline-design", "decision-guide.retrieval-strategy-selection", "concept.structured-knowledge-index"]
+      "aliases": ["kontextus", "memória", "keresés", "tömörítés", "kontextustömörítés", "retrieval", "visszakeresés", "hibrid", "memóriaszinteket", "sűrű", "ritka"],
+      "summary": "Kontextus, memória és retrieval.",
+      "decision_boundary": "Kontextus- és tudáskezelési feladathoz válaszd.",
+      "module_ids": ["decision-guide.memory-vs-retrieval", "pattern.context-budget-allocation", "pattern.context-compression", "principle.context-is-finite", "procedure.user-memory-lifecycle", "concept.context-cache-architecture", "procedure.system-prompt-architecture", "checklist.prompt-injection-boundary", "pattern.dynamic-skill-loading", "pattern.hierarchical-context-compression", "procedure.retrieval-pipeline-design", "decision-guide.retrieval-strategy-selection", "concept.structured-knowledge-index", "concept.api-message-context-model", "procedure.cache-stable-context-layout", "pattern.editable-context-notes", "procedure.prompt-structure-design", "decision-guide.process-instructions-or-rule-stack", "procedure.business-rule-compilation", "decision-guide.few-shot-example-selection", "procedure.status-signal-design", "decision-guide.status-update-placement", "concept.context-isolation-strategy", "decision-guide.memory-capability-evaluation", "pattern.memory-hierarchy", "decision-guide.memory-representation-selection", "checklist.memory-privacy-sanitization", "procedure.memory-consolidation", "procedure.document-chunking-strategy", "concept.dense-retrieval", "concept.sparse-retrieval", "procedure.hybrid-retrieval-fusion", "decision-guide.multimodal-information-processing", "pattern.filesystem-knowledge-organization", "checklist.knowledge-freshness-governance", "pattern.agentic-retrieval-control", "pattern.contextual-retrieval"]
     },
     {
       "id": "tool-execution",
       "title": "Eszközhasználat",
-      "aliases": ["eszköz", "mcp", "mcp együttműködés", "végrehajtás", "jogosultság", "eszközszerződés", "aszinkron agent", "megszakítás", "esemény"],
+      "aliases": ["eszköz", "mcp", "mcp együttműködés", "végrehajtás", "jogosultság", "eszközszerződés", "aszinkron agent", "megszakítás", "esemény", "dedikált", "skill"],
       "summary": "Eszközszerződés, képességválasztás, eseményvezérelt futás, megszakítás és eredményellenőrzés.",
       "decision_boundary": "Akkor válaszd, ha az agent külső műveletet, adatlekérést vagy aszinkron végrehajtást tervez.",
-      "module_ids": ["checklist.tool-safety-boundary", "pattern.tool-discovery", "procedure.tool-contract-design", "concept.tool-capability-taxonomy", "decision-guide.tool-granularity", "pattern.event-driven-agent-execution", "procedure.async-interruption-handling", "checklist.tool-result-verification", "failure-mode.unsafe-tool-expansion"]
+      "module_ids": ["checklist.tool-safety-boundary", "pattern.tool-discovery", "procedure.tool-contract-design", "concept.tool-capability-taxonomy", "decision-guide.tool-granularity", "pattern.event-driven-agent-execution", "procedure.async-interruption-handling", "checklist.tool-result-verification", "failure-mode.unsafe-tool-expansion", "decision-guide.tool-or-skill-executor", "procedure.user-communication-during-async-execution", "principle.tool-interface-fidelity", "procedure.mcp-tool-selection", "concept.perception-execution-collaboration-tools", "checklist.isolated-tool-execution", "procedure.proactive-tool-discovery"]
     },
     {
       "id": "evaluation-and-improvement",
