@@ -1,7 +1,13 @@
 from pathlib import Path
 
+from knowledge_forge.contracts import validate_record
 from knowledge_forge.errors import KnowledgeForgeError
 from knowledge_forge.frontmatter import parse_knowledge_module
+from knowledge_forge.graph import build_graph
+from knowledge_forge.indexes import build_indexes, load_areas
+from knowledge_forge.io import read_json
+from knowledge_forge.leakage import check_content_neutrality
+from knowledge_forge.manifest import validate_manifest
 from knowledge_forge.models import KnowledgeModule
 
 
@@ -83,3 +89,64 @@ def discover_modules(pack_root: Path, schema_path: Path) -> list[KnowledgeModule
         modules.append(module)
     validate_module_set(modules)
     return sorted(modules, key=lambda module: module["metadata"]["id"])
+
+
+def _require_exact_json(
+    path: Path, expected: object, schema_path: Path, label: str
+) -> None:
+    actual = read_json(path)
+    validate_record(schema_path, actual, label)
+    if actual != expected:
+        raise KnowledgeForgeError(f"Package artifact is stale: {path.name}")
+
+
+def _validate_skill(pack_root: Path) -> None:
+    skill_path = pack_root / "skills" / "SKILL.md"
+    if skill_path.is_symlink() or not skill_path.is_file():
+        raise KnowledgeForgeError("Package routing skill must be a regular file")
+    content = skill_path.read_text(encoding="utf-8")
+    forbidden_sections = (
+        "## Lényeg",
+        "## Miért működik",
+        "## Mikor alkalmazd",
+        "## Mikor ne alkalmazd",
+        "## Döntési szabály",
+        "## Hibamódok",
+        "## Kapcsolatok",
+        "## Ellenőrzés",
+    )
+    if any(section in content for section in forbidden_sections):
+        raise KnowledgeForgeError("Routing skill must not embed module body sections")
+
+
+def validate_package(
+    pack_root: Path, schema_dir: Path, markers: list[str]
+) -> dict[str, object]:
+    manifest = validate_manifest(pack_root, schema_dir / "package-manifest.schema.json")
+    manifest_files = [entry["path"] for entry in manifest["files"]]
+    check_content_neutrality(pack_root, manifest_files, markers)
+    modules = discover_modules(pack_root, schema_dir / "knowledge-module.schema.json")
+    areas = load_areas(pack_root / "indexes" / "areas.json")
+    indexes = build_indexes(modules, areas)
+    _require_exact_json(
+        pack_root / "indexes" / "l0.json",
+        indexes["l0"],
+        schema_dir / "package-index.schema.json",
+        "L0 package index",
+    )
+    for area_id, index in indexes["l1"].items():
+        _require_exact_json(
+            pack_root / "indexes" / "l1" / f"{area_id}.json",
+            index,
+            schema_dir / "package-index.schema.json",
+            f"L1 package index {area_id}",
+        )
+    graph = build_graph(modules)
+    _require_exact_json(
+        pack_root / "graph" / "canonical.json",
+        graph,
+        schema_dir / "canonical-graph.schema.json",
+        "canonical package graph",
+    )
+    _validate_skill(pack_root)
+    return manifest
