@@ -1,6 +1,6 @@
 from pathlib import Path
 from shutil import copytree
-from zipfile import ZIP_DEFLATED, ZipFile
+from zipfile import ZIP_DEFLATED, ZIP_STORED, ZipFile
 
 import pytest
 from knowledge_forge.archive import build_archive, verify_archive
@@ -19,6 +19,17 @@ def test_build_archive_has_only_manifest_allowlist_members(tmp_path: Path) -> No
 
     assert archive_path.is_file()
     verify_archive(archive_path, SCHEMA_ROOT, [])
+
+
+def test_build_archive_uses_store_mode_for_cross_runtime_determinism(
+    tmp_path: Path,
+) -> None:
+    archive_path = tmp_path / "knowledge-package-v0.zip"
+
+    build_archive(PACK_ROOT, archive_path, SCHEMA_ROOT, [])
+
+    with ZipFile(archive_path) as archive:
+        assert {info.compress_type for info in archive.infolist()} == {ZIP_STORED}
 
 
 def test_relocated_package_validates_without_modification(tmp_path: Path) -> None:

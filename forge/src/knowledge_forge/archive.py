@@ -2,7 +2,7 @@ import os
 import stat
 import tempfile
 from pathlib import Path, PurePosixPath
-from zipfile import ZIP_DEFLATED, BadZipFile, ZipFile, ZipInfo
+from zipfile import ZIP_STORED, BadZipFile, ZipFile, ZipInfo
 
 from knowledge_forge.errors import KnowledgeForgeError
 from knowledge_forge.package import validate_package
@@ -26,7 +26,7 @@ def _archive_members(manifest: dict[str, object]) -> list[str]:
 
 def _zip_info(member: str) -> ZipInfo:
     info = ZipInfo(member, date_time=_ZIP_TIMESTAMP)
-    info.compress_type = ZIP_DEFLATED
+    info.compress_type = ZIP_STORED
     info.create_system = 3
     info.external_attr = (stat.S_IFREG | 0o644) << 16
     return info
@@ -40,7 +40,7 @@ def _write_archive(pack_root: Path, archive_path: Path, members: list[str]) -> N
     try:
         with tempfile.NamedTemporaryFile(dir=archive_path.parent, delete=False) as handle:
             temporary_path = Path(handle.name)
-        with ZipFile(temporary_path, "w", ZIP_DEFLATED, compresslevel=9) as archive:
+        with ZipFile(temporary_path, "w", ZIP_STORED) as archive:
             for member in members:
                 archive.writestr(_zip_info(member), (pack_root / member).read_bytes())
         os.replace(temporary_path, archive_path)
