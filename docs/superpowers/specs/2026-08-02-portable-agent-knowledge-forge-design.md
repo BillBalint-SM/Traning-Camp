@@ -1,6 +1,6 @@
 # Portable Agent Knowledge Forge — design specification
 
-**Status:** Foundation and portable learning-evolution-v4 knowledge package implemented and verified; derived maps remain optional.
+**Status:** Foundation and portable multimodal-collaboration-v5 knowledge package implemented and verified; derived maps remain optional.
 **Date:** 2026-08-02
 **Workspace:** `Traning Camp`
 **Delivery mode:** local-first and reviewable

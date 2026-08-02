@@ -211,6 +211,53 @@ def test_route_query_selects_learning_and_evolution_module(
     }
 
 
+@pytest.mark.parametrize(
+    ("query", "area_id", "module_id"),
+    [
+        (
+            "Melyik voice pipeline architektúrát válasszam?",
+            "real-time-multimodal",
+            "decision-guide.voice-pipeline-architecture",
+        ),
+        (
+            "Hogyan kezeljem a full duplex beszélgetés megszakítását?",
+            "real-time-multimodal",
+            "pattern.full-duplex-conversation",
+        ),
+        (
+            "Hogyan tervezzem meg egy GUI agent action space-ét?",
+            "real-time-multimodal",
+            "decision-guide.gui-action-space",
+        ),
+        (
+            "Megosztott vagy izolált kontextust kapjanak az agentek?",
+            "multi-agent-coordination",
+            "decision-guide.shared-or-isolated-context",
+        ),
+        (
+            "Hogyan koordináljon egy manager agent több worker agentet?",
+            "multi-agent-coordination",
+            "pattern.manager-worker-coordination",
+        ),
+        (
+            "Hogyan akadályozzam meg a hibák kaszkádos felerősödését agentek között?",
+            "multi-agent-coordination",
+            "checklist.cascade-containment",
+        ),
+    ],
+)
+def test_route_query_selects_multimodal_and_coordination_module(
+    query: str, area_id: str, module_id: str
+) -> None:
+    result = route_query(query, _indexes())
+
+    assert result == {
+        "status": "covered",
+        "area_id": area_id,
+        "module_ids": [module_id],
+    }
+
+
 def test_route_query_returns_not_covered_without_inventing_route() -> None:
     result = route_query("Melyik notebook gépet válasszam?", _indexes())
 
@@ -232,7 +279,7 @@ def test_build_graph_resolves_every_edge() -> None:
     graph = build_graph(discover_modules(PACK_ROOT, SCHEMA_PATH))
 
     identifiers = {node["id"] for node in graph["nodes"]}
-    assert len(identifiers) == 155
+    assert len(identifiers) == 193
     assert all(edge["source"] in identifiers for edge in graph["edges"])
     assert all(edge["target"] in identifiers for edge in graph["edges"])
     assert all(edge["source"] != edge["target"] for edge in graph["edges"])

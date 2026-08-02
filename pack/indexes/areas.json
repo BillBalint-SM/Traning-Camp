@@ -63,6 +63,22 @@
       "summary": "Bizonytalan érzékelés, valós idejű interakció, több-agent átadás és közös állapot kontrollja.",
       "decision_boundary": "Akkor válaszd, ha több csatorna, felületi művelet vagy több agent közötti határ a kérdés.",
       "module_ids": ["concept.multimodal-interaction-boundary", "failure-mode.unvalidated-autonomy", "pattern.multi-agent-context-boundaries", "decision-guide.voice-architecture-selection", "pattern.fast-slow-interaction-loop", "procedure.gui-action-grounding", "principle.planning-control-separation", "decision-guide.multi-agent-topology-selection", "procedure.multi-agent-handoff-contract", "checklist.shared-state-concurrency-control", "failure-mode.multi-agent-error-amplification"]
+    },
+    {
+      "id": "real-time-multimodal",
+      "title": "Valós idejű multimodális rendszerek",
+      "aliases": ["voice pipeline", "full duplex", "gui agent action space", "valós idejű hang", "többérzékű gui", "sim2real"],
+      "summary": "Hang-, GUI- és fizikai interakció streaminggel, megszakítással, késleltetési és biztonsági határokkal.",
+      "decision_boundary": "Akkor válaszd, ha időben folytonos hang-, képernyő- vagy fizikai megfigyelést és cselekvést kell tervezni.",
+      "module_ids": ["principle.voice-interaction-bandwidth", "decision-guide.voice-pipeline-architecture", "pattern.streaming-cascaded-voice", "procedure.streaming-turn-detection", "pattern.end-to-end-omnimodal-interaction", "pattern.full-duplex-conversation", "decision-guide.reasoning-expression-coupling", "pattern.filler-answer-split", "pattern.interaction-advice-split", "concept.fast-slow-state-interface", "checklist.expressive-speech-synthesis", "concept.gui-agent-observation-loop", "decision-guide.gui-action-space", "procedure.multisensory-gui-grounding", "checklist.mobile-automation-boundary", "procedure.real-time-latency-budget", "pattern.embodied-planning-control-stack", "procedure.sim-to-real-transfer"]
+    },
+    {
+      "id": "multi-agent-coordination",
+      "title": "Multi-agent koordináció",
+      "aliases": ["megosztott izolált kontextust", "manager worker", "kaszkádos felerősödését", "multi agent koordináció", "peer handoff", "agent society"],
+      "summary": "Több agent kontextus-, topológia-, kommunikáció-, tulajdon- és hibaterjedési szerződései.",
+      "decision_boundary": "Akkor válaszd, ha több önálló agent munkáját, átadását, közös állapotát vagy kölcsönhatását kell kontrollálni.",
+      "module_ids": ["concept.multi-agent-classification-matrix", "decision-guide.shared-or-isolated-context", "decision-guide.collaboration-topology", "decision-guide.single-or-multi-agent", "pattern.shared-context-role-switching", "procedure.multi-stage-role-switch", "procedure.cross-domain-role-switch", "pattern.isolated-context-collaboration", "pattern.filesystem-agent-bus", "procedure.agent-communication-control", "pattern.peer-review-collaboration", "pattern.manager-worker-coordination", "pattern.peer-to-peer-handoff", "procedure.cross-boundary-agent-protocol", "checklist.multi-agent-failure-review", "procedure.shared-workspace-concurrency", "checklist.cascade-containment", "concept.agent-society-simulation", "checklist.agent-economy-governance", "pattern.strategic-information-asymmetry-simulation"]
     }
   ]
 }
