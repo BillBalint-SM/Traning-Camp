@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://knowledge-forge.local/schemas/canonical-graph.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format_version", "nodes", "edges"],
+  "properties": {
+    "format_version": {"const": 1},
+    "nodes": {"type": "array"},
+    "edges": {"type": "array"}
+  }
+}

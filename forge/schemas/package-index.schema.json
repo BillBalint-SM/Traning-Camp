@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://knowledge-forge.local/schemas/package-index.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format_version", "scope"],
+  "properties": {
+    "format_version": {"const": 1},
+    "scope": {"enum": ["l0", "l1"]},
+    "areas": {"type": "array"},
+    "area_id": {"type": "string", "pattern": "^[a-z][a-z0-9-]*$"},
+    "title": {"type": "string", "minLength": 1},
+    "summary": {"type": "string", "minLength": 1},
+    "decision_boundary": {"type": "string", "minLength": 1},
+    "modules": {"type": "array"}
+  }
+}

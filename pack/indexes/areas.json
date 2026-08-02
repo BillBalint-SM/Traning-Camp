@@ -11,7 +11,7 @@
     {
       "id": "context-and-knowledge",
       "title": "Kontextus és tudás",
-      "aliases": ["kontextus", "memória", "keresés", "tömörítés"],
+      "aliases": ["kontextus", "memória", "keresés", "tömörítés", "kontextustömörítés"],
       "summary": "A releváns információ kiválasztása, megőrzése és tömörítése.",
       "decision_boundary": "Akkor válaszd, ha a kérdés a kontextuskeretről, memóriáról vagy visszakeresésről szól.",
       "module_ids": ["decision-guide.memory-vs-retrieval", "pattern.context-budget-allocation", "pattern.context-compression", "principle.context-is-finite", "procedure.user-memory-lifecycle"]
