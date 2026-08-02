@@ -23,10 +23,11 @@ from knowledge_forge.io import (
 from knowledge_forge.models import ExtractedDocument, InputRecord, PdfProbe
 from knowledge_forge.normalize import normalize_documents
 from knowledge_forge.package import build_package, validate_package
-from knowledge_forge.paths import resolve_within
+from knowledge_forge.paths import resolve_regular_within, resolve_within
 from knowledge_forge.pdf_probe import DEFAULT_PDF_LIMITS, probe_pdf
 from knowledge_forge.provenance import build_provenance_ledger
 from knowledge_forge.routing import route_query
+from knowledge_forge.routing_evaluation import verify_routing_evaluation
 from knowledge_forge.verify import verify_foundation
 
 
@@ -118,6 +119,15 @@ def _parser() -> argparse.ArgumentParser:
     disposition_parser.add_argument("--reviews", type=Path, required=True)
     disposition_parser.add_argument("--dispositions", type=Path, required=True)
     disposition_parser.add_argument("--report", type=Path, required=True)
+
+    routing_evaluation_parser = subparsers.add_parser(
+        "verify-routing-evaluation"
+    )
+    _add_workspace(routing_evaluation_parser)
+    routing_evaluation_parser.add_argument("--pack", type=Path, required=True)
+    routing_evaluation_parser.add_argument("--schemas", type=Path, required=True)
+    routing_evaluation_parser.add_argument("--suite", type=Path, required=True)
+    routing_evaluation_parser.add_argument("--report", type=Path, required=True)
     return parser
 
 
@@ -252,6 +262,18 @@ def _dispatch(namespace: argparse.Namespace) -> int:
             resolve_within(workspace_root, namespace.units),
             resolve_within(workspace_root, namespace.reviews),
             resolve_within(workspace_root, namespace.dispositions),
+            resolve_within(workspace_root, namespace.report),
+        )
+        return 0
+    if namespace.command == "verify-routing-evaluation":
+        verify_routing_evaluation(
+            resolve_within(workspace_root, namespace.pack),
+            resolve_within(workspace_root, namespace.schemas),
+            resolve_regular_within(
+                workspace_root,
+                namespace.suite,
+                "Routing evaluation suite",
+            ),
             resolve_within(workspace_root, namespace.report),
         )
         return 0
