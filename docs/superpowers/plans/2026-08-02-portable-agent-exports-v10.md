@@ -30,7 +30,7 @@
 - Planned builder: `build_portable_exports(pack_root: Path, schema_root: Path, output_root: Path) -> dict[str, object]`.
 - Planned verifier: `verify_portable_export(output_root: Path) -> dict[str, object]`.
 
-- [ ] **Step 1: Add a real-package fixture and wished-for builder tests**
+- [x] **Step 1: Add a real-package fixture and wished-for builder tests**
 
 Write tests against the real `pack/` and `forge/schemas/` with a temporary output root. Assert that the returned manifest and files contain:
 
@@ -46,19 +46,19 @@ assert manifest["profiles"]["graph"]["edge_count"] == 196
 
 Check that `skill/SKILL.md`, `rag/documents.jsonl`, `graph/nodes.jsonl`, and `graph/edges.jsonl` exist. Parse every JSONL line and require unique sorted module IDs, complete text, area metadata, and closed graph endpoints.
 
-- [ ] **Step 2: Add frontmatter and reference-closure assertions**
+- [x] **Step 2: Add frontmatter and reference-closure assertions**
 
 Require the first and last frontmatter delimiters in `skill/SKILL.md`, the exact `name: portable-agent-knowledge`, a non-empty `description`, and only relative references. For every `skill/references/` file, assert the path is declared by the export manifest and the byte hash matches.
 
-- [ ] **Step 3: Add deterministic-build and output-boundary tests**
+- [x] **Step 3: Add deterministic-build and output-boundary tests**
 
 Build two independent output directories and assert byte equality for every relative file and equality of `export_sha256`. Create an existing output with a sentinel and assert the builder fails without changing it.
 
-- [ ] **Step 4: Add malformed-input tests**
+- [x] **Step 4: Add malformed-input tests**
 
 Copy the package into `tmp_path`, mutate one canonical graph endpoint or one graph node hash, and assert the builder raises an actionable `KnowledgeForgeError` before creating a final directory. Also mutate one area module list and assert the ownership mismatch is rejected.
 
-- [ ] **Step 5: Run the focused tests and confirm RED**
+- [x] **Step 5: Run the focused tests and confirm RED**
 
 Run:
 
@@ -80,11 +80,11 @@ Expected: collection fails because `knowledge_forge.portability` does not yet ex
 - Consumes: `inspect_package`, `discover_modules`, `load_areas`, `read_json`, `canonical_json_bytes`, and `sha256_bytes`.
 - Produces: `build_portable_exports(pack_root: Path, schema_root: Path, output_root: Path) -> dict[str, object]` and `verify_portable_export(output_root: Path) -> dict[str, object]`.
 
-- [ ] **Step 1: Implement canonical input validation**
+- [x] **Step 1: Implement canonical input validation**
 
 Call `inspect_package(pack_root, schema_root)` before rendering. Load areas, modules, and canonical graph. Validate exact equality between module IDs, graph node IDs, and area ownership; validate node content hashes, edge endpoints, self edges, and duplicate `(source, type, target)` tuples. Use explicit `KnowledgeForgeError` messages without absolute paths.
 
-- [ ] **Step 2: Implement the Agent Skills profile**
+- [x] **Step 2: Implement the Agent Skills profile**
 
 Render a fixed UTF-8 `skill/SKILL.md` with this frontmatter and relative routing instructions:
 
@@ -97,7 +97,7 @@ description: Route agent-system questions through the validated knowledge refere
 
 Copy exact canonical `graph/canonical.json`, `indexes/areas.json`, `indexes/l0.json`, every L1 index, and every module into `skill/references/`. Do not copy the package manifest or any ignored artifact.
 
-- [ ] **Step 3: Implement the RAG JSONL profile**
+- [x] **Step 3: Implement the RAG JSONL profile**
 
 Emit one `canonical_json_bytes` record per sorted module:
 
@@ -118,11 +118,11 @@ Emit one `canonical_json_bytes` record per sorted module:
 
 Write exactly 193 newline-terminated records. Preserve each module's complete public Markdown text without adding export-specific headers.
 
-- [ ] **Step 4: Implement the graph JSONL profile**
+- [x] **Step 4: Implement the graph JSONL profile**
 
 Emit sorted canonical node records with `id`, `title`, `kind`, `maturity`, `confidence`, `tags`, and `content_sha256`, followed by sorted edge records with `source`, `type`, and `target`. Emit exactly 193 nodes and 196 edges with no endpoint outside the node set.
 
-- [ ] **Step 5: Run focused tests and Ruff**
+- [x] **Step 5: Run focused tests and Ruff**
 
 Run:
 
@@ -133,7 +133,7 @@ uv run ruff check forge/src/knowledge_forge/portability.py tests/test_portabilit
 
 Expected: profile rendering, counts, content, and deterministic-build tests pass.
 
-- [ ] **Step 6: Commit the renderer**
+- [x] **Step 6: Commit the renderer**
 
 ```powershell
 git add forge/src/knowledge_forge/portability.py tests/test_portability.py
