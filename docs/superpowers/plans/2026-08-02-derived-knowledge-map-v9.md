@@ -77,7 +77,7 @@
 - [x] Resolve package/schema paths within the workspace and validate output lexically and physically beneath `derived/`.
 - [x] Preserve actionable `KnowledgeForgeError` to exit-code-2 behavior without absolute-path leakage.
 - [x] Run focused CLI tests, the complete CLI suite, and Ruff.
-- [ ] Commit the CLI boundary.
+- [x] Commit the CLI boundary.
 
 ---
 
@@ -87,12 +87,12 @@
 - Create: `derived/knowledge-map-v9-a/`
 - Create: `derived/knowledge-map-v9-b/`
 
-- [ ] Build two independent projections from the same validated package.
-- [ ] Compare `projection.json` bytes and every recorded relative file SHA-256.
-- [ ] Run the real UA 2.9.4 knowledge parser against both projections.
-- [ ] Assert format `karpathy`, 193 articles, 10 topics, 196 wikilinks, zero unresolved links, and 389 total edges.
-- [ ] Scan both trees for forbidden origin markers, private paths, secrets, and absolute workspace paths.
-- [ ] Preserve one final ignored projection for local visualization.
+- [x] Build two independent projections from the same validated package.
+- [x] Compare `projection.json` bytes and every recorded relative file SHA-256.
+- [x] Run the real UA 2.9.4 knowledge parser against both projections.
+- [x] Assert format `karpathy`, 193 articles, 10 topics, 196 wikilinks, zero unresolved links, and 389 total edges.
+- [x] Scan both trees for forbidden origin markers, private paths, secrets, and absolute workspace paths.
+- [x] Preserve one final ignored projection for local visualization.
 
 ---
 
@@ -101,11 +101,11 @@
 **Files:**
 - Modify: v9 design and implementation-plan status only after evidence exists.
 
-- [ ] Run full pytest and Ruff.
-- [ ] Verify package, inspect exact counts/budgets, and rerun routing evaluation.
-- [ ] Build two portable archives and prove their SHA-256 hashes equal the pre-v9 digest.
-- [ ] Run public neutrality, secret, placeholder, `git diff --check`, and staged allowlist reviews.
-- [ ] Update this plan and the design status with verified evidence.
+- [x] Run full pytest and Ruff.
+- [x] Verify package, inspect exact counts/budgets, and rerun routing evaluation.
+- [x] Build two portable archives and prove their SHA-256 hashes equal the pre-v9 digest.
+- [x] Run public neutrality, secret, placeholder, `git diff --check`, and changed-path allowlist reviews.
+- [x] Update this plan and the design status with verified evidence.
 - [ ] Commit final v9 evidence, push `dev-knowledge-map-v9`, and run a fresh work-state preflight.
 - [ ] Fast-forward verified dev into synchronized `feature`, rerun required gates, and push `feature`.
 - [ ] Preserve ignored projections, remove only the clean merged v9 worktree, and delete only the merged local v9 branch.

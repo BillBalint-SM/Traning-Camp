@@ -1,6 +1,6 @@
 # Derived Knowledge Map v9 — design specification
 
-**Status:** Approved for implementation
+**Status:** Implemented and verified
 **Date:** 2026-08-02
 **Workspace:** `Traning Camp`
 **Delivery branch:** `dev-knowledge-map-v9`
@@ -160,3 +160,19 @@ The slice is complete only when:
 8. the verified dev slice is pushed and fast-forwarded into `feature`;
 9. `feature` and `origin/feature` converge while `main` remains unchanged;
 10. a clean unique next dev worktree is created from synchronized `feature`.
+
+## 13. Verified evidence
+
+The completed implementation produces 194 wiki files plus `projection.json`. Two independent builds have identical file hashes and the same projection digest:
+
+```text
+e71aac603c9bcd54d6c53847519bfba0f1f670cf7beaec6d716e12260e7b661f
+```
+
+The real UA 2.9.4 parser reports 193 articles, 10 topics, 196 wikilinks, zero unresolved links, and 389 edges. Both parser runs produce the same scan-manifest SHA-256:
+
+```text
+cd735072101a87bb72bc0ede654c8b554de900a77fc71917e3b680312c09000a
+```
+
+The complete automated suite passes 129 tests and Ruff is green. The canonical package digest remains `d71cbf0d2e27bd057c55a951aab7d92a71c5914e0dfd7b58b7d13276ed2102a8`. Two independently built archives remain byte-identical to the pre-v9 archive with SHA-256 `04e60a70f0462dc92036a421563fbffd6d9936768c765055727b909000387861`.
