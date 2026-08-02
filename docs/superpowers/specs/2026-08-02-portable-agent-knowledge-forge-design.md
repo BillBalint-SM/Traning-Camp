@@ -1,6 +1,6 @@
 # Portable Agent Knowledge Forge — design specification
 
-**Status:** Approved; implementation has not started
+**Status:** Foundation implemented and verified; portable knowledge package v0 pending
 **Date:** 2026-08-02
 **Workspace:** `Traning Camp`
 **Delivery mode:** local-first and reviewable
