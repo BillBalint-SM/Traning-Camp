@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://knowledge-forge.local/schemas/provenance-ledger.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "inputs", "documents", "units", "pdf_probe"],
+  "properties": {
+    "schema_version": {"type": "integer", "const": 1},
+    "inputs": {
+      "type": "array",
+      "items": {"$ref": "input-record.schema.json"}
+    },
+    "documents": {
+      "type": "array",
+      "items": {"$ref": "extracted-document.schema.json"}
+    },
+    "units": {
+      "type": "array",
+      "items": {"$ref": "normalized-unit.schema.json"}
+    },
+    "pdf_probe": {"$ref": "pdf-probe.schema.json"}
+  }
+}

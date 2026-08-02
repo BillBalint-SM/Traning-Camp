@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://knowledge-forge.local/schemas/pdf-probe.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["input_sha256", "page_count", "encrypted", "text_char_count", "text_sha256"],
+  "properties": {
+    "input_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "page_count": {"type": "integer", "minimum": 1},
+    "encrypted": {"type": "boolean", "const": false},
+    "text_char_count": {"type": "integer", "minimum": 0},
+    "text_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

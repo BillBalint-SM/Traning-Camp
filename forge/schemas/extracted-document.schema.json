@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://knowledge-forge.local/schemas/extracted-document.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["document_id", "input_sha256", "spine_index", "logical_path", "text"],
+  "properties": {
+    "document_id": {"type": "string", "pattern": "^doc-[0-9a-f]{20}$"},
+    "input_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "spine_index": {"type": "integer", "minimum": 0},
+    "logical_path": {"type": "string", "minLength": 1},
+    "text": {"type": "string", "minLength": 1}
+  }
+}
