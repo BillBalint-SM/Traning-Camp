@@ -656,3 +656,115 @@ def test_cli_rejects_knowledge_map_symlink_ancestor(
 
     assert run(arguments) == 2
     assert "must not contain a symbolic link" in capsys.readouterr().err
+
+
+def _portable_exports_arguments(workspace: Path) -> list[str]:
+    return [
+        "build-portable-exports",
+        "--workspace",
+        str(workspace),
+        "--pack",
+        "pack",
+        "--schemas",
+        "forge/schemas",
+        "--output",
+        "derived/portable-exports",
+    ]
+
+
+def test_cli_builds_portable_exports(tmp_path: Path) -> None:
+    workspace = _workspace(tmp_path)
+
+    assert run(_portable_exports_arguments(workspace)) == 0
+
+    output_root = workspace / "derived" / "portable-exports"
+    manifest = json.loads(
+        (output_root / "export.json").read_text(encoding="utf-8")
+    )
+    assert manifest["kind"] == "portable-agent-exports"
+    assert manifest["profiles"]["rag"]["document_count"] == 193
+    assert manifest["profiles"]["graph"]["edge_count"] == 196
+
+
+def test_cli_rejects_existing_portable_exports_output(
+    tmp_path: Path, capsys: object
+) -> None:
+    workspace = _workspace(tmp_path)
+    output_root = workspace / "derived" / "portable-exports"
+    output_root.mkdir(parents=True)
+
+    assert run(_portable_exports_arguments(workspace)) == 2
+    assert "already exists" in capsys.readouterr().err
+
+
+def test_cli_rejects_absolute_portable_exports_output(
+    tmp_path: Path, capsys: object
+) -> None:
+    workspace = _workspace(tmp_path)
+    arguments = _portable_exports_arguments(workspace)
+    arguments[arguments.index("--output") + 1] = str(
+        (workspace / "derived/portable-exports").resolve()
+    )
+
+    assert run(arguments) == 2
+    assert "Path must be relative" in capsys.readouterr().err
+
+
+def test_cli_rejects_escaping_portable_exports_output(
+    tmp_path: Path, capsys: object
+) -> None:
+    workspace = _workspace(tmp_path)
+    arguments = _portable_exports_arguments(workspace)
+    arguments[arguments.index("--output") + 1] = "../portable-exports"
+
+    assert run(arguments) == 2
+    assert "Path escapes workspace root" in capsys.readouterr().err
+
+
+def test_cli_rejects_portable_exports_output_outside_derived(
+    tmp_path: Path, capsys: object
+) -> None:
+    workspace = _workspace(tmp_path)
+    arguments = _portable_exports_arguments(workspace)
+    arguments[arguments.index("--output") + 1] = "exports/portable-exports"
+
+    assert run(arguments) == 2
+    assert "must be inside derived" in capsys.readouterr().err
+
+
+def test_cli_rejects_portable_exports_output_symlink(
+    tmp_path: Path, capsys: object
+) -> None:
+    workspace = _workspace(tmp_path)
+    derived_root = workspace / "derived"
+    derived_root.mkdir()
+    target_root = derived_root / "target"
+    target_root.mkdir()
+    output_root = derived_root / "portable-exports"
+    try:
+        output_root.symlink_to(target_root, target_is_directory=True)
+    except OSError:
+        pytest.skip("Symlink creation is unavailable")
+
+    assert run(_portable_exports_arguments(workspace)) == 2
+    assert "must not contain a symbolic link" in capsys.readouterr().err
+
+
+def test_cli_rejects_portable_exports_symlink_ancestor(
+    tmp_path: Path, capsys: object
+) -> None:
+    workspace = _workspace(tmp_path)
+    derived_root = workspace / "derived"
+    derived_root.mkdir()
+    real_parent = workspace / "real-parent"
+    real_parent.mkdir()
+    linked_parent = derived_root / "linked"
+    try:
+        linked_parent.symlink_to(real_parent, target_is_directory=True)
+    except OSError:
+        pytest.skip("Symlink creation is unavailable")
+    arguments = _portable_exports_arguments(workspace)
+    arguments[arguments.index("--output") + 1] = "derived/linked/portable-exports"
+
+    assert run(arguments) == 2
+    assert "must not contain a symbolic link" in capsys.readouterr().err

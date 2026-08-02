@@ -198,11 +198,11 @@ git commit -m "feat: verify portable export manifests"
 - Consumes: `build_portable_exports(pack_root, schema_root, output_root)` and `resolve_new_directory_within`.
 - Produces: `build-portable-exports --workspace --pack --schemas --output`, returning `0` on success and `2` on `KnowledgeForgeError`.
 
-- [ ] **Step 1: Add failing CLI tests**
+- [x] **Step 1: Add failing CLI tests**
 
 Add tests for a successful copied workspace, existing output, absolute output, workspace escape, output outside `derived/`, output symlink, and symlink ancestor. Require a successful manifest with 193 documents and a failure message containing no absolute workspace path.
 
-- [ ] **Step 2: Run CLI tests to confirm RED**
+- [x] **Step 2: Run CLI tests to confirm RED**
 
 Run:
 
@@ -212,11 +212,11 @@ uv run pytest -q tests/test_cli_package.py -k "portable_exports"
 
 Expected: argparse rejects the unknown command.
 
-- [ ] **Step 3: Add parser and dispatch**
+- [x] **Step 3: Add parser and dispatch**
 
 Register `build-portable-exports` with required `--workspace`, `--pack`, `--schemas`, and `--output` arguments. Resolve package/schema via `resolve_within` and output via `resolve_new_directory_within(workspace_root, output, Path("derived"), "Portable export output")`.
 
-- [ ] **Step 4: Run CLI and complete regression tests**
+- [x] **Step 4: Run CLI and complete regression tests**
 
 Run:
 
@@ -226,7 +226,7 @@ uv run pytest -q tests/test_cli_package.py tests/test_portability.py
 uv run ruff check forge/src/knowledge_forge/cli.py forge/src/knowledge_forge/portability.py tests/test_cli_package.py tests/test_portability.py
 ```
 
-- [ ] **Step 5: Commit the CLI boundary**
+- [x] **Step 5: Commit the CLI boundary**
 
 ```powershell
 git add forge/src/knowledge_forge/cli.py tests/test_cli_package.py

@@ -30,6 +30,7 @@ from knowledge_forge.paths import (
     resolve_within,
 )
 from knowledge_forge.pdf_probe import DEFAULT_PDF_LIMITS, probe_pdf
+from knowledge_forge.portability import build_portable_exports
 from knowledge_forge.provenance import build_provenance_ledger
 from knowledge_forge.routing import route_query
 from knowledge_forge.routing_evaluation import verify_routing_evaluation
@@ -141,6 +142,12 @@ def _parser() -> argparse.ArgumentParser:
     knowledge_map_parser.add_argument("--pack", type=Path, required=True)
     knowledge_map_parser.add_argument("--schemas", type=Path, required=True)
     knowledge_map_parser.add_argument("--output", type=Path, required=True)
+
+    portable_exports_parser = subparsers.add_parser("build-portable-exports")
+    _add_workspace(portable_exports_parser)
+    portable_exports_parser.add_argument("--pack", type=Path, required=True)
+    portable_exports_parser.add_argument("--schemas", type=Path, required=True)
+    portable_exports_parser.add_argument("--output", type=Path, required=True)
     return parser
 
 
@@ -299,6 +306,18 @@ def _dispatch(namespace: argparse.Namespace) -> int:
                 namespace.output,
                 Path("derived"),
                 "Knowledge map output",
+            ),
+        )
+        return 0
+    if namespace.command == "build-portable-exports":
+        build_portable_exports(
+            resolve_within(workspace_root, namespace.pack),
+            resolve_within(workspace_root, namespace.schemas),
+            resolve_new_directory_within(
+                workspace_root,
+                namespace.output,
+                Path("derived"),
+                "Portable export output",
             ),
         )
         return 0
