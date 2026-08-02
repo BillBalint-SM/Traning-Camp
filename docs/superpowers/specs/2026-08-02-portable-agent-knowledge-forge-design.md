@@ -1,6 +1,6 @@
 # Portable Agent Knowledge Forge — design specification
 
-**Status:** Initial portable knowledge package, exact private review coverage, and complete normalized-unit disposition implemented and verified; derived maps remain optional.
+**Status:** Portable knowledge package, exact private review coverage, complete normalized-unit disposition, and deterministic routing evaluation implemented and verified; derived maps remain optional.
 **Date:** 2026-08-02
 **Workspace:** `Traning Camp`
 **Delivery mode:** local-first and reviewable

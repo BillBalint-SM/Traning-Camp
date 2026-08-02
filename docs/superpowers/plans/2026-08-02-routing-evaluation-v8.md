@@ -33,7 +33,7 @@
 - Consumes: `validate_record(schema_path: Path, record: object, label: str)`, `read_json(path: Path)`, and indexes shaped as `{"l0": object, "l1": object}`.
 - Produces: `load_routing_suite(suite_path: Path, schema_path: Path, indexes: dict[str, object]) -> dict[str, object]`.
 
-- [ ] **Step 1: Write failing structural validation tests**
+- [x] **Step 1: Write failing structural validation tests**
 
 Create helpers that copy the real `pack/` and schema directory into `tmp_path`, then write a minimal suite containing one canonical case for every currently discovered module plus the declared category counts. Add focused tests that mutate this valid fixture and assert explicit `KnowledgeForgeError` messages for:
 
@@ -50,7 +50,7 @@ def test_load_routing_suite_rejects_unknown_module(tmp_path: Path) -> None:
 
 Cover invalid schema shape, duplicate case ID, duplicate canonical target, missing public canonical target, unknown area, unsorted module/alternative identifiers, and category/expectation mismatch. Assert that every failure names the violated routing-evaluation rule without printing the query text.
 
-- [ ] **Step 2: Run the focused tests and confirm RED**
+- [x] **Step 2: Run the focused tests and confirm RED**
 
 Run:
 
@@ -60,7 +60,7 @@ uv run pytest -q tests/test_routing_evaluation.py -k "load_routing_suite"
 
 Expected: collection or import failure because `routing_evaluation.py` and `load_routing_suite` do not exist.
 
-- [ ] **Step 3: Add the strict JSON schema**
+- [x] **Step 3: Add the strict JSON schema**
 
 Define a Draft 2020-12 object with `additionalProperties: false` at the suite, threshold, count, and case levels. Require:
 
@@ -86,7 +86,7 @@ Define a Draft 2020-12 object with `additionalProperties: false` at the suite, t
 
 Case IDs use `^[a-z][a-z0-9.-]*$`; category and expected status use closed enums; queries have `minLength: 1`; expected identifier arrays contain unique strings.
 
-- [ ] **Step 4: Implement endpoint and semantic validation**
+- [x] **Step 4: Implement endpoint and semantic validation**
 
 Implement `load_routing_suite` as a single-mode loader:
 
@@ -101,7 +101,7 @@ Implement `load_routing_suite` as a single-mode loader:
 
 Return the validated payload without changing query or identifier content.
 
-- [ ] **Step 5: Run focused tests and Ruff**
+- [x] **Step 5: Run focused tests and Ruff**
 
 Run:
 
@@ -112,7 +112,7 @@ uv run ruff check forge/src/knowledge_forge/routing_evaluation.py tests/test_rou
 
 Expected: all Task 1 tests pass and Ruff prints `All checks passed!`.
 
-- [ ] **Step 6: Commit the structural contract**
+- [x] **Step 6: Commit the structural contract**
 
 ```powershell
 git add forge/schemas/routing-evaluation.schema.json forge/src/knowledge_forge/routing_evaluation.py tests/test_routing_evaluation.py
@@ -131,7 +131,7 @@ git commit -m "feat: add routing evaluation contract"
 - Consumes: `route_query(query: str, indexes: dict[str, object]) -> dict[str, object]`, `inspect_package(pack_root: Path, schema_root: Path) -> dict[str, object]`, `canonical_json_bytes(payload: object) -> bytes`, and `write_json_atomic(path: Path, payload: object)`.
 - Produces: `evaluate_routing_suite(suite: dict[str, object], indexes: dict[str, object], package_sha256: str) -> dict[str, object]` and `verify_routing_evaluation(pack_root: Path, schema_root: Path, suite_path: Path, report_path: Path) -> dict[str, object]`.
 
-- [ ] **Step 1: Write failing metric and determinism tests**
+- [x] **Step 1: Write failing metric and determinism tests**
 
 Use a compact valid fixture with real package endpoints and monkeypatch only `route_query` where a controlled failure is necessary. Assert exact integer numerators, denominators, and percentages for every category. Add tests proving:
 
@@ -152,7 +152,7 @@ def test_verify_routing_evaluation_writes_failure_report_before_raising(
 
 Also assert that structurally invalid input creates no report, two identical runs create identical bytes, case failures are sorted by ID, a covered result without a module increments `covered_without_module_count`, and the report contains no absolute workspace path.
 
-- [ ] **Step 2: Run the evaluator tests and confirm RED**
+- [x] **Step 2: Run the evaluator tests and confirm RED**
 
 Run:
 
@@ -162,7 +162,7 @@ uv run pytest -q tests/test_routing_evaluation.py -k "evaluate or verify"
 
 Expected: failure because evaluator and verifier functions are not implemented.
 
-- [ ] **Step 3: Implement case comparison and integer metrics**
+- [x] **Step 3: Implement case comparison and integer metrics**
 
 For each sorted case, call `route_query` exactly once and compare:
 
@@ -183,7 +183,7 @@ Represent category metrics as:
 
 Use integer arithmetic only. A case passes only when its complete expected route matches, while canonical area and canonical module metrics are also counted separately.
 
-- [ ] **Step 4: Implement canonical report identity and verification**
+- [x] **Step 4: Implement canonical report identity and verification**
 
 Build the report without timestamps or local paths. Include package and suite digests, declared and actual counts, 193-module coverage, category metrics, per-area counts, covered-without-module count, sorted failures, and failed metric names. Compute:
 
@@ -193,7 +193,7 @@ evaluation_sha256 = sha256_bytes(canonical_json_bytes(report_without_digest))
 
 `verify_routing_evaluation` must validate the package through `inspect_package`, load indexes, validate the suite, evaluate it, write the report atomically, then raise `KnowledgeForgeError` after the report write when any threshold fails. A passing report returns normally.
 
-- [ ] **Step 5: Run evaluator tests, the routing suite, and Ruff**
+- [x] **Step 5: Run evaluator tests, the routing suite, and Ruff**
 
 Run:
 
@@ -205,7 +205,7 @@ uv run ruff check forge/src/knowledge_forge/routing_evaluation.py tests/test_rou
 
 Expected: all tests pass and Ruff is green.
 
-- [ ] **Step 6: Commit the evaluation engine**
+- [x] **Step 6: Commit the evaluation engine**
 
 ```powershell
 git add forge/src/knowledge_forge/routing_evaluation.py tests/test_routing_evaluation.py
@@ -224,7 +224,7 @@ git commit -m "feat: evaluate routing quality deterministically"
 - Consumes: `verify_routing_evaluation(pack_root, schema_root, suite_path, report_path)`.
 - Produces: CLI command `verify-routing-evaluation --workspace --pack --schemas --suite --report` returning `0` on a passing report and `2` with an actionable error on invalid input or a failed quality gate.
 
-- [ ] **Step 1: Write failing CLI tests**
+- [x] **Step 1: Write failing CLI tests**
 
 Add `_routing_evaluation_arguments(workspace: Path) -> list[str]` and tests for a passing copied suite, a quality failure that preserves the report, an absolute suite path rejection, a workspace-escape report path rejection, and a suite symlink rejection where the platform permits symlink creation.
 
@@ -238,7 +238,7 @@ report = json.loads(
 assert report["status"] == "passed"
 ```
 
-- [ ] **Step 2: Run CLI tests and confirm RED**
+- [x] **Step 2: Run CLI tests and confirm RED**
 
 Run:
 
@@ -248,11 +248,11 @@ uv run pytest -q tests/test_cli_package.py -k "routing_evaluation"
 
 Expected: argparse rejects the unknown command.
 
-- [ ] **Step 3: Add parser and dispatch integration**
+- [x] **Step 3: Add parser and dispatch integration**
 
 Add one parser with five required arguments. Resolve all four paths through `resolve_within` before calling the verifier. Do not add optional modes or flags. Preserve the existing `KnowledgeForgeError` to exit-code-2 behavior.
 
-- [ ] **Step 4: Run focused and complete CLI tests**
+- [x] **Step 4: Run focused and complete CLI tests**
 
 Run:
 
@@ -264,7 +264,7 @@ uv run ruff check forge/src/knowledge_forge/cli.py tests/test_cli_package.py
 
 Expected: all tests pass.
 
-- [ ] **Step 5: Commit the CLI boundary**
+- [x] **Step 5: Commit the CLI boundary**
 
 ```powershell
 git add forge/src/knowledge_forge/cli.py tests/test_cli_package.py
@@ -286,7 +286,7 @@ git commit -m "feat: expose routing evaluation gate"
 - Consumes: every area and module descriptor in the current package.
 - Produces: one reviewed canonical query per module, 40 paraphrases distributed four per area, 20 unsupported queries, and 10 exact cross-area ambiguity cases.
 
-- [ ] **Step 1: Build canonical cases in stable module-ID order**
+- [x] **Step 1: Build canonical cases in stable module-ID order**
 
 For every module, write one Hungarian task question that expresses its decision or procedure rather than copying only its title. Use the module's owning area and exact ID as the expected route. Validate that the set of 193 expected module IDs equals the discovered package set and each appears once.
 
@@ -296,11 +296,11 @@ Case IDs use this stable form:
 canonical.<module-id-with-dots-preserved>.01
 ```
 
-- [ ] **Step 2: Add paraphrase, negative, and ambiguity cases**
+- [x] **Step 2: Add paraphrase, negative, and ambiguity cases**
 
 Add exactly four paraphrases for each of the ten areas. Each paraphrase must avoid merely repeating the exact module title and must still have one defensible target. Add 20 clearly unsupported operational questions with `not-covered`. Add ten genuine cross-area cases whose expected alternatives are sorted and contain at least two known area IDs.
 
-- [ ] **Step 3: Run the suite as the unchanged baseline**
+- [x] **Step 3: Run the suite as the unchanged baseline**
 
 Copy the ignored private marker and audit inputs required by the full gates from the clean `feature` worktree using exact path and SHA-256 verification. Then run:
 
@@ -315,15 +315,15 @@ uv run knowledge-forge verify-routing-evaluation `
 
 Expected: either a passing baseline or exit `2` with a deterministic failure report. Preserve that report unchanged.
 
-- [ ] **Step 4: Classify every failure before changing behavior**
+- [x] **Step 4: Classify every failure before changing behavior**
 
 For each failed case, assign exactly one root-cause class from the design: expectation error, area term, module term, generic-token false positive, real ambiguity, hidden module tie, or unsupported false route. Fix benchmark expectations only when the selected target was objectively incorrect. Do not weaken thresholds.
 
-- [ ] **Step 5: Apply the smallest justified routing corrections**
+- [x] **Step 5: Apply the smallest justified routing corrections**
 
 Prefer replacing misleading or redundant metadata. Add terms only when all L0/L1 indexes remain within 8192 bytes. Change scoring only when metadata cannot represent the boundary. Every algorithm change receives a focused RED test in `tests/test_routing.py` before implementation.
 
-- [ ] **Step 6: Rebuild and verify package artifacts when needed**
+- [x] **Step 6: Rebuild and verify package artifacts when needed**
 
 If package metadata changed, run:
 
@@ -334,11 +334,11 @@ uv run knowledge-forge verify-package --workspace . --pack pack --schemas forge/
 
 Review the manifest and generated diff. Reject unrelated module, graph, index, or formatting churn.
 
-- [ ] **Step 7: Produce the final passing evaluation report**
+- [x] **Step 7: Produce the final passing evaluation report**
 
 Run the verifier with `private/audit/routing-evaluation-v8.json`. Inspect all counts and hashes. Require 263 cases, 193/193 canonical targets, all 100% gates, at least 90% paraphrase accuracy, and zero covered-without-module responses.
 
-- [ ] **Step 8: Commit the suite and justified corrections**
+- [x] **Step 8: Commit the suite and justified corrections**
 
 Stage the tracked suite, tests, evaluator changes, and only demonstrated package corrections. Confirm that no `private/`, `dist/`, `work/`, `inputs/`, or origin-bearing artifact is staged.
 
@@ -359,7 +359,7 @@ git commit -m "feat: add complete routing evaluation suite"
 - Consumes: completed tracked v8 implementation and retained private v7 audit inputs.
 - Produces: verified v8 commit on synchronized `feature`, retained deterministic reports/archive, and clean `dev-knowledge-map-v9` worktree.
 
-- [ ] **Step 1: Run all automated and private gates in the isolated worktree**
+- [x] **Step 1: Run all automated and private gates in the isolated worktree**
 
 ```powershell
 uv run pytest -q
@@ -373,15 +373,15 @@ uv run knowledge-forge inspect-package --workspace . --pack pack --schemas forge
 
 Expected: every command exits `0`; package inspection still reports 193 modules, 10 areas, and all L0/L1 indexes at most 8192 bytes.
 
-- [ ] **Step 2: Run neutrality and deterministic archive gates**
+- [x] **Step 2: Run neutrality and deterministic archive gates**
 
 Require no matches from the public forbidden-term scan. Build `dist/knowledge-package-v8-a.zip` and `dist/knowledge-package-v8-b.zip` with `archive-package`, compare SHA-256, and fail if they differ.
 
-- [ ] **Step 3: Update design and plan status**
+- [x] **Step 3: Update design and plan status**
 
 Change the design status to implemented and verified. Mark plan checkboxes complete only after their evidence exists. Run `git diff --check`, placeholder scans, staged-path allowlist review, public leakage review, and secret-pattern review.
 
-- [ ] **Step 4: Commit and push the completed v8 slice**
+- [x] **Step 4: Commit and push the completed v8 slice**
 
 After a fresh work-state preflight confirms the intended repository, branch, HEAD, worktree, upstream, and target:
 
@@ -390,11 +390,11 @@ git commit -m "docs: record verified routing evaluation v8"
 git push -u origin dev-knowledge-evolution-v8
 ```
 
-- [ ] **Step 5: Fast-forward into feature and revalidate**
+- [x] **Step 5: Fast-forward into feature and revalidate**
 
 In the root worktree, fetch and prove `feature == origin/feature` and that `origin/feature` is an ancestor of the dev head. Merge with `git merge --ff-only origin/dev-knowledge-evolution-v8`, copy ignored v8 artifacts with hash verification, rerun the complete tests, Ruff, routing evaluation, package inspection, and archive comparison, then push explicit `feature`.
 
-- [ ] **Step 6: Clean the merged worktree and start v9**
+- [x] **Step 6: Clean the merged worktree and start v9**
 
 Prove the v8 worktree is clean, the commit is contained in `feature`, and retained ignored artifacts exist in the root workspace. Remove only the exact validated v8 worktree, delete only the merged local v8 branch, and create `dev-knowledge-map-v9` from synchronized `feature`. Run work-state preflight, pytest, and Ruff in the new clean worktree. Leave `main` unchanged.
 
