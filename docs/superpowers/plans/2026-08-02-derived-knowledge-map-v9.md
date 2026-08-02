@@ -39,13 +39,13 @@
 **Files:**
 - Create: `tests/test_knowledge_map.py`
 
-- [ ] Add a fixture that copies the real validated package into `tmp_path`.
-- [ ] Specify exact `index.md` sections, module links, H1 insertion, and outgoing typed relation links.
-- [ ] Require 193 articles, 10 areas, 196 relation links, and exact module ownership.
-- [ ] Require identical bytes from two independent builds.
-- [ ] Mutate graph/index fixtures to prove explicit failure for missing endpoints, duplicate edges, self edges, content-hash mismatch, and module-set mismatch.
-- [ ] Require an existing output directory to remain untouched on failure.
-- [ ] Run `uv run pytest -q tests/test_knowledge_map.py` and preserve the expected import failure.
+- [x] Add a fixture that uses the real validated package for production-shaped behavior.
+- [x] Specify exact `index.md` sections, module links, H1 insertion, and outgoing typed relation links.
+- [x] Require 193 articles, 10 areas, 196 relation links, and exact module ownership.
+- [x] Require identical bytes from two independent builds.
+- [x] Mutate graph/index inputs to prove explicit failure for missing endpoints, duplicate edges, self edges, content-hash mismatch, and module-set mismatch.
+- [x] Require an existing output directory to remain untouched on failure.
+- [x] Run `uv run pytest -q tests/test_knowledge_map.py` and preserve the expected import failure.
 
 ---
 
@@ -55,13 +55,13 @@
 - Create: `forge/src/knowledge_forge/knowledge_map.py`
 - Modify: `tests/test_knowledge_map.py`
 
-- [ ] Implement pure loaders for areas, graph nodes/edges, and module bytes.
-- [ ] Implement exact cross-artifact validation before rendering.
-- [ ] Implement pure index, H1, and relation-section renderers.
-- [ ] Build a complete file map in memory and hash canonical output bytes.
-- [ ] Write through a sibling temporary directory, verify every output, then rename to the non-existing target.
-- [ ] On failure, remove only the exact temporary directory created by the current invocation.
-- [ ] Run focused tests and Ruff until green.
+- [x] Implement pure loaders for areas, graph nodes/edges, and module bytes.
+- [x] Implement exact cross-artifact validation before rendering.
+- [x] Implement pure index, H1, and relation-section renderers.
+- [x] Build a complete file map in memory and hash canonical output bytes.
+- [x] Write through a sibling temporary directory, verify every output, then rename to the non-existing target.
+- [x] On failure, remove only the exact temporary directory created by the current invocation.
+- [x] Run focused tests and Ruff until green.
 - [ ] Commit the builder as one cohesive change.
 
 ---
