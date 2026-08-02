@@ -241,15 +241,15 @@ git commit -m "feat: expose portable agent exports"
 - Create: `derived/portable-exports-v10-a/`
 - Create: `derived/portable-exports-v10-b/`
 
-- [ ] **Step 1: Build two independent exports**
+- [x] **Step 1: Build two independent exports**
 
 Run the CLI twice with distinct output paths. Compare every relative file SHA-256 and require identical `export_sha256` values.
 
-- [ ] **Step 2: Run profile smoke checks**
+- [x] **Step 2: Run profile smoke checks**
 
 Read `export.json`, every RAG record, every graph node/edge, and the skill reference tree. Require 193 RAG records, 193 graph nodes, 196 graph edges, valid relative references, complete text, and zero unresolved endpoints.
 
-- [ ] **Step 3: Run full repository gates**
+- [x] **Step 3: Run full repository gates**
 
 Run:
 
@@ -260,11 +260,11 @@ uv run knowledge-forge verify-package --workspace . --pack pack --schemas forge/
 uv run knowledge-forge verify-routing-evaluation --workspace . --pack pack --schemas forge/schemas --suite forge/evals/routing-v1.json --report private/audit/routing-evaluation-v10.json
 ```
 
-- [ ] **Step 4: Verify neutrality and archive regression**
+- [x] **Step 4: Verify neutrality and archive regression**
 
 Scan both exports and all changed public files for external-origin markers, absolute paths, secrets, and placeholders. Build two v10 archive copies and require their SHA-256 to equal `04E60A70F0462DC92036A421563FBFFD6D9936768C765055727B909000387861`.
 
-- [ ] **Step 5: Update design and plan evidence**
+- [x] **Step 5: Update design and plan evidence**
 
 Change the v10 design status to `Implemented and verified`, mark only evidence-backed plan checkboxes, record export and smoke hashes, and run `git diff --check` plus changed-path allowlist review.
 

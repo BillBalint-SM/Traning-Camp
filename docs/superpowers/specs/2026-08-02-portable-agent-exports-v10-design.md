@@ -1,6 +1,6 @@
 # Portable Agent Exports v10 — design specification
 
-**Status:** Awaiting user review
+**Status:** Implemented and verified
 **Date:** 2026-08-02
 **Workspace:** `Traning Camp`
 **Delivery branch:** `dev-knowledge-portability-v10`
@@ -168,3 +168,15 @@ The slice is complete only when:
 8. the dev slice is pushed and fast-forwarded into `feature`;
 9. `feature` and `origin/feature` converge while `main` remains unchanged;
 10. the next unique dev worktree is created from synchronized `feature`.
+
+## 13. Verified evidence
+
+Two independent v10 exports contain identical profile bytes and manifest data. The verified export digest is:
+
+```text
+bb210e0f528ea31a83c1eeaf6011fdecdbcbd60fa7ed63f99e55be0a456cdcc2
+```
+
+The smoke gate confirms 193 Agent Skills references, 193 RAG records, 193 graph nodes, and 196 graph edges with closed endpoints. The complete repository suite passes 145 tests and Ruff is green. Package verification and the 263-case routing evaluation pass; the evaluation digest is `d4be0f1f87243bbab6efb20c275d12c59e4026daaa37348e5d14722d91acf4b9`.
+
+The canonical package digest remains `d71cbf0d2e27bd057c55a951aab7d92a71c5914e0dfd7b58b7d13276ed2102a8`. Two archive builds remain byte-identical to the pre-v10 archive with SHA-256 `04e60a70f0462dc92036a421563fbffd6d9936768c765055727b909000387861`.
