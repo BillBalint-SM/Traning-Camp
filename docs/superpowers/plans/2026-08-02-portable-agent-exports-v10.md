@@ -152,23 +152,23 @@ git commit -m "feat: render portable agent export profiles"
 - Consumes: the validated profile file map from Task 2.
 - Produces: `export.json` with relative file hashes and `verify_portable_export(output_root)` that returns the validated manifest.
 
-- [ ] **Step 1: Add manifest identity tests**
+- [x] **Step 1: Add manifest identity tests**
 
 Assert that `export.json` has `format_version: 1`, `kind: portable-agent-exports`, the package digest, exact counts, profile counts, a sorted file list, and a 64-character `export_sha256`. Recompute the digest from the manifest with `export_sha256` removed and require equality.
 
-- [ ] **Step 2: Add per-file verification tests**
+- [x] **Step 2: Add per-file verification tests**
 
 After a successful build, mutate one generated file and assert `verify_portable_export` reports a hash mismatch. Add an undeclared extra file and assert verification rejects it. Assert that a missing generated file is rejected.
 
-- [ ] **Step 3: Implement manifest and verifier**
+- [x] **Step 3: Implement manifest and verifier**
 
 Build the manifest from sorted relative file paths, hash every profile byte, compute `export_sha256` from canonical JSON without the digest field, and write `export.json`. The verifier must reject absolute paths, `..` components, undeclared files, missing files, hash mismatches, duplicate IDs, and endpoint drift.
 
-- [ ] **Step 4: Implement temporary-directory publication**
+- [x] **Step 4: Implement temporary-directory publication**
 
 Write all files to a sibling directory created with `tempfile.mkdtemp`, verify the complete tree, then rename it to the new output target. On any exception, remove only the exact temporary directory created by this invocation; never remove an existing output directory.
 
-- [ ] **Step 5: Run focused tests and Ruff**
+- [x] **Step 5: Run focused tests and Ruff**
 
 Run:
 
@@ -179,7 +179,7 @@ uv run ruff check forge/src/knowledge_forge/portability.py tests/test_portabilit
 
 Expected: all export contract, digest, mutation, and cleanup tests pass.
 
-- [ ] **Step 6: Commit manifest and publication**
+- [x] **Step 6: Commit manifest and publication**
 
 ```powershell
 git add forge/src/knowledge_forge/portability.py tests/test_portability.py

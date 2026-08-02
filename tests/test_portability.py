@@ -134,6 +134,29 @@ def test_verify_portable_export_rejects_undeclared_file(tmp_path: Path) -> None:
         verify_portable_export(output_root)
 
 
+def test_verify_portable_export_rejects_missing_file(tmp_path: Path) -> None:
+    output_root = tmp_path / "derived" / "portable-exports"
+    build_portable_exports(PACK_ROOT, SCHEMA_ROOT, output_root)
+    (output_root / "graph" / "edges.jsonl").unlink()
+
+    with pytest.raises(KnowledgeForgeError, match="missing"):
+        verify_portable_export(output_root)
+
+
+def test_verify_portable_export_rejects_manifest_digest_tamper(
+    tmp_path: Path,
+) -> None:
+    output_root = tmp_path / "derived" / "portable-exports"
+    build_portable_exports(PACK_ROOT, SCHEMA_ROOT, output_root)
+    manifest_path = output_root / "export.json"
+    manifest = _read_json(manifest_path)
+    manifest["export_sha256"] = "0" * 64
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    with pytest.raises(KnowledgeForgeError, match="digest mismatch"):
+        verify_portable_export(output_root)
+
+
 @pytest.mark.parametrize(
     ("artifact", "message"),
     [("graph/canonical.json", "Stale manifest hash"),
