@@ -38,3 +38,26 @@ class NormalizedUnit(TypedDict):
     heading: str
     text: str
     content_sha256: str
+
+
+class KnowledgeRelation(TypedDict):
+    type: str
+    target: str
+
+
+class KnowledgeModuleMetadata(TypedDict):
+    id: str
+    title: str
+    kind: str
+    maturity: str
+    confidence: str
+    language: str
+    tags: list[str]
+    aliases: list[str]
+    relations: list[KnowledgeRelation]
+
+
+class KnowledgeModule(TypedDict):
+    metadata: KnowledgeModuleMetadata
+    body: str
+    content_sha256: str
