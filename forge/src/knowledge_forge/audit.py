@@ -15,6 +15,8 @@ from knowledge_forge.io import (
 from knowledge_forge.package import discover_modules, validate_package
 
 _MATURITY_VALUES = ("candidate", "reviewed", "validated", "deprecated")
+_STRUCTURAL_REASONS = {"navigation", "preamble", "reflection", "summary"}
+_EXCLUDED_REASONS = {"case-study", "implementation-detail", "non-operational-context"}
 
 
 def _count_values(values: list[str]) -> dict[str, int]:
@@ -146,20 +148,9 @@ def _validated_links(
     return sorted(links, key=lambda item: cast(str, item["module_id"]))
 
 
-def verify_promotion_coverage(
-    pack_root: Path,
-    schema_root: Path,
-    units_path: Path,
-    reviews_root: Path,
-    report_path: Path,
-) -> dict[str, object]:
-    modules = discover_modules(
-        pack_root, schema_root / "knowledge-module.schema.json"
-    )
-    public_ids = {module["metadata"]["id"] for module in modules}
-    known_units = _known_unit_ids(units_path)
-    review_paths = _review_files(reviews_root)
-    links = _validated_links(review_paths, known_units)
+def _require_exact_module_coverage(
+    public_ids: set[str], links: list[dict[str, object]]
+) -> None:
     mapped_ids = [cast(str, link["module_id"]) for link in links]
     duplicates = sorted(
         module_id
@@ -180,6 +171,23 @@ def verify_promotion_coverage(
         raise KnowledgeForgeError(
             f"Promotion coverage contains unknown module: {extra[0]}"
         )
+
+
+def verify_promotion_coverage(
+    pack_root: Path,
+    schema_root: Path,
+    units_path: Path,
+    reviews_root: Path,
+    report_path: Path,
+) -> dict[str, object]:
+    modules = discover_modules(
+        pack_root, schema_root / "knowledge-module.schema.json"
+    )
+    public_ids = {module["metadata"]["id"] for module in modules}
+    known_units = _known_unit_ids(units_path)
+    review_paths = _review_files(reviews_root)
+    links = _validated_links(review_paths, known_units)
+    _require_exact_module_coverage(public_ids, links)
     linked_units = {
         unit_id for link in links for unit_id in cast(list[str], link["unit_ids"])
     }
@@ -192,6 +200,141 @@ def verify_promotion_coverage(
             len(cast(list[str], link["unit_ids"])) for link in links
         ),
         "coverage_sha256": sha256_bytes(canonical_json_bytes(links)),
+    }
+    write_json_atomic(report_path, report)
+    return report
+
+
+def _validated_dispositions(
+    dispositions_path: Path, public_ids: set[str], known_units: set[str]
+) -> list[dict[str, object]]:
+    payload = read_json(dispositions_path)
+    if not isinstance(payload, dict) or payload.get("format_version") != 1:
+        raise KnowledgeForgeError("Unit disposition has invalid format")
+    entries = payload.get("unit_disposition")
+    if not isinstance(entries, list):
+        raise KnowledgeForgeError("Unit disposition must contain an array")
+    validated: list[dict[str, object]] = []
+    for entry in entries:
+        if not isinstance(entry, dict) or set(entry) != {
+            "unit_id",
+            "state",
+            "reason",
+            "module_ids",
+        }:
+            raise KnowledgeForgeError("Unit disposition entry has invalid shape")
+        unit_id = entry["unit_id"]
+        state = entry["state"]
+        reason = entry["reason"]
+        module_ids = entry["module_ids"]
+        if not isinstance(unit_id, str) or not unit_id:
+            raise KnowledgeForgeError("Unit disposition has invalid unit_id")
+        if unit_id not in known_units:
+            raise KnowledgeForgeError(f"Unit disposition has unknown unit: {unit_id}")
+        if not isinstance(module_ids, list) or not all(
+            isinstance(module_id, str) and module_id for module_id in module_ids
+        ):
+            raise KnowledgeForgeError(
+                f"Unit disposition has invalid module_ids: {unit_id}"
+            )
+        typed_module_ids = cast(list[str], module_ids)
+        if len(typed_module_ids) != len(set(typed_module_ids)):
+            raise KnowledgeForgeError(
+                f"Unit disposition contains duplicate module: {unit_id}"
+            )
+        unknown_modules = sorted(set(typed_module_ids) - public_ids)
+        if unknown_modules:
+            raise KnowledgeForgeError(
+                f"Unit disposition has unknown module: {unknown_modules[0]}"
+            )
+        if state == "corroborating":
+            if reason != "corroborates-existing-module" or not typed_module_ids:
+                raise KnowledgeForgeError(
+                    f"Unit disposition has invalid corroborating entry: {unit_id}"
+                )
+        elif state == "structural":
+            if reason not in _STRUCTURAL_REASONS or typed_module_ids:
+                raise KnowledgeForgeError(
+                    f"Unit disposition has invalid structural entry: {unit_id}"
+                )
+        elif state == "excluded":
+            if reason not in _EXCLUDED_REASONS or typed_module_ids:
+                raise KnowledgeForgeError(
+                    f"Unit disposition has invalid excluded entry: {unit_id}"
+                )
+        else:
+            raise KnowledgeForgeError(
+                f"Unit disposition has invalid state: {unit_id}"
+            )
+        validated.append(
+            {
+                "unit_id": unit_id,
+                "state": state,
+                "reason": reason,
+                "module_ids": sorted(typed_module_ids),
+            }
+        )
+    identifiers = [cast(str, entry["unit_id"]) for entry in validated]
+    duplicates = sorted(
+        unit_id for unit_id, count in Counter(identifiers).items() if count > 1
+    )
+    if duplicates:
+        raise KnowledgeForgeError(
+            f"Unit disposition contains duplicate unit: {duplicates[0]}"
+        )
+    return sorted(validated, key=lambda item: cast(str, item["unit_id"]))
+
+
+def verify_unit_disposition(
+    pack_root: Path,
+    schema_root: Path,
+    units_path: Path,
+    reviews_root: Path,
+    dispositions_path: Path,
+    report_path: Path,
+) -> dict[str, object]:
+    modules = discover_modules(
+        pack_root, schema_root / "knowledge-module.schema.json"
+    )
+    public_ids = {module["metadata"]["id"] for module in modules}
+    known_units = _known_unit_ids(units_path)
+    links = _validated_links(_review_files(reviews_root), known_units)
+    _require_exact_module_coverage(public_ids, links)
+    promoted_units = {
+        unit_id for link in links for unit_id in cast(list[str], link["unit_ids"])
+    }
+    dispositions = _validated_dispositions(
+        dispositions_path, public_ids, known_units
+    )
+    disposition_units = {
+        cast(str, disposition["unit_id"]) for disposition in dispositions
+    }
+    overlap = sorted(promoted_units & disposition_units)
+    if overlap:
+        raise KnowledgeForgeError(
+            f"Unit disposition overlaps promoted unit: {overlap[0]}"
+        )
+    missing = sorted(known_units - promoted_units - disposition_units)
+    if missing:
+        raise KnowledgeForgeError(f"Unit disposition is missing unit: {missing[0]}")
+    coverage_records = [
+        {"unit_id": unit_id, "state": "promoted"}
+        for unit_id in sorted(promoted_units)
+    ] + dispositions
+    report = {
+        "format_version": 1,
+        "unit_count": len(known_units),
+        "promoted_unit_count": len(promoted_units),
+        "disposition_count": len(dispositions),
+        "state_counts": _count_values(
+            [cast(str, disposition["state"]) for disposition in dispositions]
+        ),
+        "reason_counts": _count_values(
+            [cast(str, disposition["reason"]) for disposition in dispositions]
+        ),
+        "unit_coverage_sha256": sha256_bytes(
+            canonical_json_bytes(coverage_records)
+        ),
     }
     write_json_atomic(report_path, report)
     return report

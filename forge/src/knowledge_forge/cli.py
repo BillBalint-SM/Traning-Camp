@@ -4,7 +4,11 @@ from pathlib import Path
 from typing import cast
 
 from knowledge_forge.archive import build_archive
-from knowledge_forge.audit import inspect_package, verify_promotion_coverage
+from knowledge_forge.audit import (
+    inspect_package,
+    verify_promotion_coverage,
+    verify_unit_disposition,
+)
 from knowledge_forge.epub import extract_epub
 from knowledge_forge.errors import KnowledgeForgeError
 from knowledge_forge.indexes import load_indexes
@@ -105,6 +109,15 @@ def _parser() -> argparse.ArgumentParser:
     coverage_parser.add_argument("--units", type=Path, required=True)
     coverage_parser.add_argument("--reviews", type=Path, required=True)
     coverage_parser.add_argument("--report", type=Path, required=True)
+
+    disposition_parser = subparsers.add_parser("verify-unit-disposition")
+    _add_workspace(disposition_parser)
+    disposition_parser.add_argument("--pack", type=Path, required=True)
+    disposition_parser.add_argument("--schemas", type=Path, required=True)
+    disposition_parser.add_argument("--units", type=Path, required=True)
+    disposition_parser.add_argument("--reviews", type=Path, required=True)
+    disposition_parser.add_argument("--dispositions", type=Path, required=True)
+    disposition_parser.add_argument("--report", type=Path, required=True)
     return parser
 
 
@@ -229,6 +242,16 @@ def _dispatch(namespace: argparse.Namespace) -> int:
             resolve_within(workspace_root, namespace.schemas),
             resolve_within(workspace_root, namespace.units),
             resolve_within(workspace_root, namespace.reviews),
+            resolve_within(workspace_root, namespace.report),
+        )
+        return 0
+    if namespace.command == "verify-unit-disposition":
+        verify_unit_disposition(
+            resolve_within(workspace_root, namespace.pack),
+            resolve_within(workspace_root, namespace.schemas),
+            resolve_within(workspace_root, namespace.units),
+            resolve_within(workspace_root, namespace.reviews),
+            resolve_within(workspace_root, namespace.dispositions),
             resolve_within(workspace_root, namespace.report),
         )
         return 0

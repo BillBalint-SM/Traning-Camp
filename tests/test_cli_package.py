@@ -239,3 +239,132 @@ def test_cli_rejects_unknown_promoted_module(
     assert run(_coverage_arguments(workspace)) == 2
     assert "Promotion coverage contains unknown module" in capsys.readouterr().err
     assert not (workspace / "private/audit/coverage.json").exists()
+
+
+def _write_disposition_inputs(
+    workspace: Path, unit_id: str, module_ids: list[str]
+) -> None:
+    units_path = workspace / "private/normalized/units.jsonl"
+    known_units = {
+        json.loads(line)["unit_id"]
+        for line in units_path.read_text(encoding="utf-8").splitlines()
+        if line
+    }
+    if unit_id not in known_units:
+        with units_path.open("a", encoding="utf-8", newline="\n") as handle:
+            handle.write(json.dumps({"unit_id": unit_id}) + "\n")
+    dispositions_path = workspace / "private/audit/unit-dispositions.json"
+    dispositions_path.parent.mkdir(parents=True, exist_ok=True)
+    state = "corroborating" if module_ids else "structural"
+    reason = "corroborates-existing-module" if module_ids else "preamble"
+    payload = {
+        "format_version": 1,
+        "unit_disposition": [
+            {
+                "unit_id": unit_id,
+                "state": state,
+                "reason": reason,
+                "module_ids": module_ids,
+            }
+        ],
+    }
+    dispositions_path.write_text(json.dumps(payload), encoding="utf-8")
+
+
+def _disposition_arguments(workspace: Path) -> list[str]:
+    return [
+        "verify-unit-disposition",
+        "--workspace",
+        str(workspace),
+        "--pack",
+        "pack",
+        "--schemas",
+        "forge/schemas",
+        "--units",
+        "private/normalized/units.jsonl",
+        "--reviews",
+        "private/provenance",
+        "--dispositions",
+        "private/audit/unit-dispositions.json",
+        "--report",
+        "private/audit/unit-coverage.json",
+    ]
+
+
+def test_cli_verifies_complete_unit_disposition(tmp_path: Path) -> None:
+    workspace = _workspace(tmp_path)
+    module_ids = sorted(path.stem for path in (workspace / "pack/knowledge").glob("*.md"))
+    _write_coverage_inputs(workspace, module_ids)
+    _write_disposition_inputs(workspace, "unit-structural", [])
+
+    assert run(_disposition_arguments(workspace)) == 0
+
+    report = json.loads(
+        (workspace / "private/audit/unit-coverage.json").read_text(encoding="utf-8")
+    )
+    assert report["unit_count"] == 2
+    assert report["promoted_unit_count"] == 1
+    assert report["disposition_count"] == 1
+    assert report["state_counts"] == {"structural": 1}
+
+
+def test_cli_rejects_missing_unit_disposition(
+    tmp_path: Path, capsys: object
+) -> None:
+    workspace = _workspace(tmp_path)
+    module_ids = sorted(path.stem for path in (workspace / "pack/knowledge").glob("*.md"))
+    _write_coverage_inputs(workspace, module_ids)
+    _write_disposition_inputs(workspace, "unit-structural", [])
+    disposition_path = workspace / "private/audit/unit-dispositions.json"
+    payload = json.loads(disposition_path.read_text(encoding="utf-8"))
+    payload["unit_disposition"] = []
+    disposition_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    assert run(_disposition_arguments(workspace)) == 2
+    assert "Unit disposition is missing unit" in capsys.readouterr().err
+    assert not (workspace / "private/audit/unit-coverage.json").exists()
+
+
+def test_cli_rejects_disposition_overlap_with_promoted_unit(
+    tmp_path: Path, capsys: object
+) -> None:
+    workspace = _workspace(tmp_path)
+    module_ids = sorted(path.stem for path in (workspace / "pack/knowledge").glob("*.md"))
+    _write_coverage_inputs(workspace, module_ids)
+    _write_disposition_inputs(workspace, "unit-reviewed", [])
+
+    assert run(_disposition_arguments(workspace)) == 2
+    assert "Unit disposition overlaps promoted unit" in capsys.readouterr().err
+    assert not (workspace / "private/audit/unit-coverage.json").exists()
+
+
+def test_cli_rejects_unknown_disposition_module(
+    tmp_path: Path, capsys: object
+) -> None:
+    workspace = _workspace(tmp_path)
+    module_ids = sorted(path.stem for path in (workspace / "pack/knowledge").glob("*.md"))
+    _write_coverage_inputs(workspace, module_ids)
+    _write_disposition_inputs(
+        workspace, "unit-corroborating", ["principle.unknown"]
+    )
+
+    assert run(_disposition_arguments(workspace)) == 2
+    assert "Unit disposition has unknown module" in capsys.readouterr().err
+    assert not (workspace / "private/audit/unit-coverage.json").exists()
+
+
+def test_cli_rejects_invalid_disposition_state_reason(
+    tmp_path: Path, capsys: object
+) -> None:
+    workspace = _workspace(tmp_path)
+    module_ids = sorted(path.stem for path in (workspace / "pack/knowledge").glob("*.md"))
+    _write_coverage_inputs(workspace, module_ids)
+    _write_disposition_inputs(workspace, "unit-structural", [])
+    disposition_path = workspace / "private/audit/unit-dispositions.json"
+    payload = json.loads(disposition_path.read_text(encoding="utf-8"))
+    payload["unit_disposition"][0]["reason"] = "corroborates-existing-module"
+    disposition_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    assert run(_disposition_arguments(workspace)) == 2
+    assert "Unit disposition has invalid structural entry" in capsys.readouterr().err
+    assert not (workspace / "private/audit/unit-coverage.json").exists()
