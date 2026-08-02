@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://knowledge-forge.local/schemas/routing-evaluation.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format_version", "expected_counts", "thresholds", "cases"],
+  "properties": {
+    "format_version": {"const": 1},
+    "expected_counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["canonical", "paraphrase", "negative", "ambiguous"],
+      "properties": {
+        "canonical": {"const": 193},
+        "paraphrase": {"const": 40},
+        "negative": {"const": 20},
+        "ambiguous": {"const": 10}
+      }
+    },
+    "thresholds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "canonical_area_percent",
+        "canonical_module_percent",
+        "paraphrase_percent",
+        "negative_percent",
+        "ambiguous_percent"
+      ],
+      "properties": {
+        "canonical_area_percent": {"type": "integer", "minimum": 0, "maximum": 100},
+        "canonical_module_percent": {"type": "integer", "minimum": 0, "maximum": 100},
+        "paraphrase_percent": {"type": "integer", "minimum": 0, "maximum": 100},
+        "negative_percent": {"type": "integer", "minimum": 0, "maximum": 100},
+        "ambiguous_percent": {"type": "integer", "minimum": 0, "maximum": 100}
+      }
+    },
+    "cases": {
+      "type": "array",
+      "minItems": 263,
+      "maxItems": 263,
+      "items": {"$ref": "#/$defs/case"}
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9.-]*$"
+    },
+    "areaIdentifier": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "category",
+        "query",
+        "expected_status",
+        "expected_area_id",
+        "expected_module_ids",
+        "expected_alternatives"
+      ],
+      "properties": {
+        "id": {"$ref": "#/$defs/identifier"},
+        "category": {
+          "enum": ["canonical", "paraphrase", "negative", "ambiguous"]
+        },
+        "query": {"type": "string", "minLength": 1},
+        "expected_status": {
+          "enum": ["covered", "not-covered", "ambiguous"]
+        },
+        "expected_area_id": {
+          "oneOf": [
+            {"$ref": "#/$defs/areaIdentifier"},
+            {"type": "null"}
+          ]
+        },
+        "expected_module_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/identifier"}
+        },
+        "expected_alternatives": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/areaIdentifier"}
+        }
+      }
+    }
+  }
+}
