@@ -3,11 +3,11 @@ from pathlib import Path
 from knowledge_forge.contracts import validate_record
 from knowledge_forge.errors import KnowledgeForgeError
 from knowledge_forge.frontmatter import parse_knowledge_module
-from knowledge_forge.graph import build_graph
-from knowledge_forge.indexes import build_indexes, load_areas
+from knowledge_forge.graph import build_graph, write_graph
+from knowledge_forge.indexes import build_indexes, load_areas, write_indexes
 from knowledge_forge.io import read_json
 from knowledge_forge.leakage import check_content_neutrality
-from knowledge_forge.manifest import validate_manifest
+from knowledge_forge.manifest import validate_manifest, write_manifest
 from knowledge_forge.models import KnowledgeModule
 
 
@@ -150,3 +150,12 @@ def validate_package(
     )
     _validate_skill(pack_root)
     return manifest
+
+
+def build_package(pack_root: Path, schema_dir: Path) -> dict[str, object]:
+    modules = discover_modules(pack_root, schema_dir / "knowledge-module.schema.json")
+    areas = load_areas(pack_root / "indexes" / "areas.json")
+    write_indexes(pack_root, build_indexes(modules, areas))
+    write_graph(pack_root, build_graph(modules))
+    write_manifest(pack_root)
+    return validate_package(pack_root, schema_dir, [])

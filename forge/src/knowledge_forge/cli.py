@@ -3,8 +3,10 @@ import sys
 from pathlib import Path
 from typing import cast
 
+from knowledge_forge.archive import build_archive
 from knowledge_forge.epub import extract_epub
 from knowledge_forge.errors import KnowledgeForgeError
+from knowledge_forge.indexes import load_indexes
 from knowledge_forge.intake import intake_file, upsert_input_record
 from knowledge_forge.io import (
     read_json,
@@ -14,9 +16,11 @@ from knowledge_forge.io import (
 )
 from knowledge_forge.models import ExtractedDocument, InputRecord, PdfProbe
 from knowledge_forge.normalize import normalize_documents
+from knowledge_forge.package import build_package, validate_package
 from knowledge_forge.paths import resolve_within
 from knowledge_forge.pdf_probe import DEFAULT_PDF_LIMITS, probe_pdf
 from knowledge_forge.provenance import build_provenance_ledger
+from knowledge_forge.routing import route_query
 from knowledge_forge.verify import verify_foundation
 
 
@@ -63,6 +67,29 @@ def _parser() -> argparse.ArgumentParser:
     verify_parser.add_argument("--probe", type=Path, required=True)
     verify_parser.add_argument("--units", type=Path, required=True)
     verify_parser.add_argument("--ledger", type=Path, required=True)
+
+    build_package_parser = subparsers.add_parser("build-package")
+    _add_workspace(build_package_parser)
+    build_package_parser.add_argument("--pack", type=Path, required=True)
+    build_package_parser.add_argument("--schemas", type=Path, required=True)
+
+    verify_package_parser = subparsers.add_parser("verify-package")
+    _add_workspace(verify_package_parser)
+    verify_package_parser.add_argument("--pack", type=Path, required=True)
+    verify_package_parser.add_argument("--schemas", type=Path, required=True)
+    verify_package_parser.add_argument("--markers", type=Path, required=True)
+
+    route_parser = subparsers.add_parser("route")
+    _add_workspace(route_parser)
+    route_parser.add_argument("--pack", type=Path, required=True)
+    route_parser.add_argument("--query", required=True)
+
+    archive_package_parser = subparsers.add_parser("archive-package")
+    _add_workspace(archive_package_parser)
+    archive_package_parser.add_argument("--pack", type=Path, required=True)
+    archive_package_parser.add_argument("--schemas", type=Path, required=True)
+    archive_package_parser.add_argument("--markers", type=Path, required=True)
+    archive_package_parser.add_argument("--archive", type=Path, required=True)
     return parser
 
 
@@ -78,6 +105,15 @@ def _record_for_role(records: list[InputRecord], role: str) -> InputRecord:
     if len(matches) != 1:
         raise KnowledgeForgeError(f"Input role must resolve exactly once: {role}")
     return matches[0]
+
+
+def _load_markers(path: Path) -> list[str]:
+    payload = read_json(path)
+    if not isinstance(payload, list) or not all(
+        isinstance(marker, str) for marker in payload
+    ):
+        raise KnowledgeForgeError("Private marker file must be a JSON string array")
+    return cast(list[str], payload)
 
 
 def _dispatch(namespace: argparse.Namespace) -> int:
@@ -138,6 +174,31 @@ def _dispatch(namespace: argparse.Namespace) -> int:
             resolve_within(workspace_root, namespace.probe),
             resolve_within(workspace_root, namespace.units),
             resolve_within(workspace_root, namespace.ledger),
+        )
+        return 0
+    if namespace.command == "build-package":
+        build_package(
+            resolve_within(workspace_root, namespace.pack),
+            resolve_within(workspace_root, namespace.schemas),
+        )
+        return 0
+    if namespace.command == "verify-package":
+        validate_package(
+            resolve_within(workspace_root, namespace.pack),
+            resolve_within(workspace_root, namespace.schemas),
+            _load_markers(resolve_within(workspace_root, namespace.markers)),
+        )
+        return 0
+    if namespace.command == "route":
+        indexes = load_indexes(resolve_within(workspace_root, namespace.pack))
+        print(route_query(namespace.query, indexes))
+        return 0
+    if namespace.command == "archive-package":
+        build_archive(
+            resolve_within(workspace_root, namespace.pack),
+            resolve_within(workspace_root, namespace.archive),
+            resolve_within(workspace_root, namespace.schemas),
+            _load_markers(resolve_within(workspace_root, namespace.markers)),
         )
         return 0
     raise KnowledgeForgeError(f"Unsupported command: {namespace.command}")

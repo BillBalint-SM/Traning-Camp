@@ -19,7 +19,7 @@
     {
       "id": "tool-execution",
       "title": "Eszközhasználat",
-      "aliases": ["eszköz", "mcp", "végrehajtás", "jogosultság"],
+      "aliases": ["eszköz", "mcp", "végrehajtás", "jogosultság", "eszközszerződés"],
       "summary": "Eszközszerződés, biztonsági korlát és feladathoz kötött képességválasztás.",
       "decision_boundary": "Akkor válaszd, ha az agent külső műveletet vagy adatlekérést tervez.",
       "module_ids": ["checklist.tool-safety-boundary", "pattern.tool-discovery", "procedure.tool-contract-design"]

@@ -138,3 +138,21 @@ def write_indexes(pack_root: Path, indexes: dict[str, object]) -> None:
     l1 = cast(dict[str, object], indexes["l1"])
     for area_id in sorted(l1):
         write_json_atomic(pack_root / "indexes" / "l1" / f"{area_id}.json", l1[area_id])
+
+
+def load_indexes(pack_root: Path) -> dict[str, object]:
+    l0 = read_json(pack_root / "indexes" / "l0.json")
+    if not isinstance(l0, dict):
+        raise KnowledgeForgeError("L0 package index must be an object")
+    areas = l0.get("areas")
+    if not isinstance(areas, list):
+        raise KnowledgeForgeError("L0 package index must contain an areas list")
+    l1: dict[str, object] = {}
+    for area in areas:
+        if not isinstance(area, dict):
+            raise KnowledgeForgeError("L0 package index must contain only area objects")
+        area_id = area.get("id")
+        if not isinstance(area_id, str) or not area_id:
+            raise KnowledgeForgeError("L0 package area must have an ID")
+        l1[area_id] = read_json(pack_root / "indexes" / "l1" / f"{area_id}.json")
+    return {"l0": l0, "l1": l1}
