@@ -1,0 +1,44 @@
+{
+  "areas": [
+    {
+      "id": "core-agent-systems",
+      "title": "Agent alaprendszerek",
+      "aliases": ["agent", "működési modell", "harness"],
+      "summary": "Az agent felépítése, felelősségi határai és alapvető képességei.",
+      "decision_boundary": "Akkor válaszd, ha a feladat modell, kontextus és eszköz együttműködéséről szól.",
+      "module_ids": ["principle.agent-operating-model"]
+    },
+    {
+      "id": "context-and-knowledge",
+      "title": "Kontextus és tudás",
+      "aliases": ["kontextus", "memória", "keresés", "tömörítés"],
+      "summary": "A releváns információ kiválasztása, megőrzése és tömörítése.",
+      "decision_boundary": "Akkor válaszd, ha a kérdés a kontextuskeretről, memóriáról vagy visszakeresésről szól.",
+      "module_ids": ["decision-guide.memory-vs-retrieval", "pattern.context-budget-allocation", "pattern.context-compression", "principle.context-is-finite", "procedure.user-memory-lifecycle"]
+    },
+    {
+      "id": "tool-execution",
+      "title": "Eszközhasználat",
+      "aliases": ["eszköz", "mcp", "végrehajtás", "jogosultság"],
+      "summary": "Eszközszerződés, biztonsági korlát és feladathoz kötött képességválasztás.",
+      "decision_boundary": "Akkor válaszd, ha az agent külső műveletet vagy adatlekérést tervez.",
+      "module_ids": ["checklist.tool-safety-boundary", "pattern.tool-discovery", "procedure.tool-contract-design"]
+    },
+    {
+      "id": "evaluation-and-improvement",
+      "title": "Értékelés és fejlesztés",
+      "aliases": ["értékelés", "mérés", "tanítás", "fejlesztés"],
+      "summary": "Mérhető agent minőség, visszajelzési ciklus és képességfejlesztési döntés.",
+      "decision_boundary": "Akkor válaszd, ha változtatás hatását vagy fejlesztési módszert kell kiválasztani.",
+      "module_ids": ["decision-guide.sft-or-rl", "pattern.experience-driven-improvement", "procedure.agent-evaluation-loop"]
+    },
+    {
+      "id": "interaction-and-collaboration",
+      "title": "Interakció és együttműködés",
+      "aliases": ["multimodális", "hang", "gui", "több agent"],
+      "summary": "Bizonytalan érzékelés, több-agent átadás és az önálló végrehajtás kontrollja.",
+      "decision_boundary": "Akkor válaszd, ha több csatorna vagy több agent közötti határ a kérdés.",
+      "module_ids": ["concept.multimodal-interaction-boundary", "failure-mode.unvalidated-autonomy", "pattern.multi-agent-context-boundaries"]
+    }
+  ]
+}
