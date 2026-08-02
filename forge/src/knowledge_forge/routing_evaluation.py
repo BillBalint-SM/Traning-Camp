@@ -2,10 +2,14 @@ from collections import Counter
 from pathlib import Path
 from typing import cast
 
+from knowledge_forge.audit import inspect_package
 from knowledge_forge.contracts import validate_record
 from knowledge_forge.errors import KnowledgeForgeError
-from knowledge_forge.io import read_json
+from knowledge_forge.hashing import sha256_bytes
+from knowledge_forge.indexes import load_indexes
+from knowledge_forge.io import canonical_json_bytes, read_json, write_json_atomic
 from knowledge_forge.paths import require_regular_file
+from knowledge_forge.routing import route_query
 
 _COVERED_CATEGORIES = {"canonical", "paraphrase"}
 
@@ -129,3 +133,172 @@ def load_routing_suite(
     validated = dict(suite)
     validated["cases"] = sorted(cases, key=lambda case: cast(str, case["id"]))
     return validated
+
+
+def _metric(passed: int, total: int) -> dict[str, int]:
+    return {
+        "passed": passed,
+        "total": total,
+        "percent": (passed * 100) // total,
+    }
+
+
+def _actual_route(result: dict[str, object]) -> dict[str, object]:
+    return {
+        "status": result["status"],
+        "area_id": result.get("area_id"),
+        "module_ids": sorted(cast(list[str], result.get("module_ids", []))),
+        "alternatives": sorted(cast(list[str], result.get("alternatives", []))),
+    }
+
+
+def _failure_reasons(
+    case: dict[str, object], actual: dict[str, object]
+) -> list[str]:
+    reasons: list[str] = []
+    if actual["status"] != case["expected_status"]:
+        reasons.append("status")
+    if actual["area_id"] != case["expected_area_id"]:
+        reasons.append("area")
+    if actual["module_ids"] != case["expected_module_ids"]:
+        reasons.append("module")
+    if actual["alternatives"] != case["expected_alternatives"]:
+        reasons.append("alternatives")
+    return sorted(reasons)
+
+
+def evaluate_routing_suite(
+    suite: dict[str, object], indexes: dict[str, object], package_sha256: str
+) -> dict[str, object]:
+    cases = sorted(
+        cast(list[dict[str, object]], suite["cases"]),
+        key=lambda case: cast(str, case["id"]),
+    )
+    category_counts = Counter(cast(str, case["category"]) for case in cases)
+    metric_totals = {
+        "canonical_area": category_counts["canonical"],
+        "canonical_module": category_counts["canonical"],
+        "paraphrase_route": category_counts["paraphrase"],
+        "negative_rejection": category_counts["negative"],
+        "ambiguity_exact_set": category_counts["ambiguous"],
+    }
+    metric_passed = dict.fromkeys(metric_totals, 0)
+    per_area: dict[str, dict[str, int]] = {}
+    failures: list[dict[str, object]] = []
+    covered_without_module_count = 0
+
+    for case in cases:
+        actual = _actual_route(
+            route_query(cast(str, case["query"]), indexes)
+        )
+        reasons = _failure_reasons(case, actual)
+        passed = not reasons
+        category = cast(str, case["category"])
+        if actual["status"] == "covered" and not actual["module_ids"]:
+            covered_without_module_count += 1
+        if category == "canonical":
+            if (
+                actual["status"] == "covered"
+                and actual["area_id"] == case["expected_area_id"]
+            ):
+                metric_passed["canonical_area"] += 1
+            if (
+                actual["status"] == "covered"
+                and actual["module_ids"] == case["expected_module_ids"]
+            ):
+                metric_passed["canonical_module"] += 1
+        elif category == "paraphrase" and passed:
+            metric_passed["paraphrase_route"] += 1
+        elif category == "negative" and passed:
+            metric_passed["negative_rejection"] += 1
+        elif category == "ambiguous" and passed:
+            metric_passed["ambiguity_exact_set"] += 1
+
+        if category in _COVERED_CATEGORIES:
+            area_id = cast(str, case["expected_area_id"])
+            area_metric = per_area.setdefault(area_id, {"passed": 0, "total": 0})
+            area_metric["total"] += 1
+            if passed:
+                area_metric["passed"] += 1
+        if reasons:
+            failures.append(
+                {
+                    "case_id": case["id"],
+                    "category": category,
+                    "reasons": reasons,
+                    "actual_status": actual["status"],
+                    "actual_area_id": actual["area_id"],
+                    "actual_module_ids": actual["module_ids"],
+                    "actual_alternatives": actual["alternatives"],
+                }
+            )
+
+    metrics = {
+        name: _metric(metric_passed[name], total)
+        for name, total in sorted(metric_totals.items())
+    }
+    thresholds = cast(dict[str, int], suite["thresholds"])
+    threshold_metrics = [
+        ("canonical_area_percent", "canonical_area"),
+        ("canonical_module_percent", "canonical_module"),
+        ("paraphrase_percent", "paraphrase_route"),
+        ("negative_percent", "negative_rejection"),
+        ("ambiguous_percent", "ambiguity_exact_set"),
+    ]
+    failed_metrics = [
+        threshold_name
+        for threshold_name, metric_name in threshold_metrics
+        if metrics[metric_name]["percent"] < thresholds[threshold_name]
+    ]
+    if covered_without_module_count:
+        failed_metrics.append("covered_without_module_count")
+
+    suite_for_hash = dict(suite)
+    suite_for_hash["cases"] = cases
+    report_without_digest: dict[str, object] = {
+        "format_version": 1,
+        "status": "failed" if failed_metrics else "passed",
+        "package_sha256": package_sha256,
+        "suite_sha256": sha256_bytes(canonical_json_bytes(suite_for_hash)),
+        "case_count": len(cases),
+        "category_counts": dict(sorted(category_counts.items())),
+        "canonical_target_count": len(
+            {
+                cast(list[str], case["expected_module_ids"])[0]
+                for case in cases
+                if case["category"] == "canonical"
+            }
+        ),
+        "metrics": metrics,
+        "per_area": dict(sorted(per_area.items())),
+        "covered_without_module_count": covered_without_module_count,
+        "failures": failures,
+        "failed_metrics": failed_metrics,
+    }
+    report = dict(report_without_digest)
+    report["evaluation_sha256"] = sha256_bytes(
+        canonical_json_bytes(report_without_digest)
+    )
+    return report
+
+
+def verify_routing_evaluation(
+    pack_root: Path,
+    schema_root: Path,
+    suite_path: Path,
+    report_path: Path,
+) -> dict[str, object]:
+    profile = inspect_package(pack_root, schema_root)
+    indexes = load_indexes(pack_root)
+    suite = load_routing_suite(
+        suite_path, schema_root / "routing-evaluation.schema.json", indexes
+    )
+    report = evaluate_routing_suite(
+        suite, indexes, cast(str, profile["package_sha256"])
+    )
+    write_json_atomic(report_path, report)
+    failed_metrics = cast(list[str], report["failed_metrics"])
+    if failed_metrics:
+        failed_metric = failed_metrics[0].replace("_", " ")
+        raise KnowledgeForgeError(f"Routing evaluation failed: {failed_metric}")
+    return report
