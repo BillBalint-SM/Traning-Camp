@@ -17,6 +17,14 @@
       "module_ids": ["decision-guide.memory-vs-retrieval", "pattern.context-budget-allocation", "pattern.context-compression", "principle.context-is-finite", "procedure.user-memory-lifecycle", "concept.context-cache-architecture", "procedure.system-prompt-architecture", "checklist.prompt-injection-boundary", "pattern.dynamic-skill-loading", "pattern.hierarchical-context-compression", "procedure.retrieval-pipeline-design", "decision-guide.retrieval-strategy-selection", "concept.structured-knowledge-index", "concept.api-message-context-model", "procedure.cache-stable-context-layout", "pattern.editable-context-notes", "procedure.prompt-structure-design", "decision-guide.process-instructions-or-rule-stack", "procedure.business-rule-compilation", "decision-guide.few-shot-example-selection", "procedure.status-signal-design", "decision-guide.status-update-placement", "concept.context-isolation-strategy", "decision-guide.memory-capability-evaluation", "pattern.memory-hierarchy", "decision-guide.memory-representation-selection", "checklist.memory-privacy-sanitization", "procedure.memory-consolidation", "procedure.document-chunking-strategy", "concept.dense-retrieval", "concept.sparse-retrieval", "procedure.hybrid-retrieval-fusion", "decision-guide.multimodal-information-processing", "pattern.filesystem-knowledge-organization", "checklist.knowledge-freshness-governance", "pattern.agentic-retrieval-control", "pattern.contextual-retrieval"]
     },
     {
+      "id": "coding-agents",
+      "title": "Coding agentek",
+      "aliases": ["coding agent", "kódagent", "kódolás", "fájlszerkesztés", "kódgenerálás", "session nélküli"],
+      "summary": "Kódalapú gondolkodás, szerkesztés, futtatás és új eszközök létrehozása.",
+      "decision_boundary": "Repository-, kódgenerálási vagy fejlesztési feladathoz válaszd.",
+      "module_ids": ["principle.code-as-meta-capability", "pattern.sessionless-coding-agent", "checklist.coding-agent-security", "procedure.coding-agent-workflow", "checklist.coding-harness-design", "procedure.coding-error-recovery", "procedure.coding-agent-search", "procedure.safe-file-editing", "principle.code-as-reasoning-medium", "pattern.executable-business-rules", "procedure.code-driven-media-generation", "pattern.code-system-adapter", "pattern.generative-ui", "principle.agent-tool-bootstrapping"]
+    },
+    {
       "id": "tool-execution",
       "title": "Eszközhasználat",
       "aliases": ["eszköz", "mcp", "mcp együttműködés", "végrehajtás", "jogosultság", "eszközszerződés", "aszinkron agent", "megszakítás", "esemény", "dedikált", "skill"],
@@ -27,10 +35,10 @@
     {
       "id": "evaluation-and-improvement",
       "title": "Értékelés és fejlesztés",
-      "aliases": ["értékelés", "mérés", "tanítás", "fejlesztés", "agent observability", "observability", "megfigyelhetőség", "abláció"],
+      "aliases": ["értékelés", "mérés", "tanítás", "fejlesztés", "agent observability", "observability", "megfigyelhetőség", "abláció", "llm judge", "statisztikailag", "futási költségét"],
       "summary": "Mérhető agent minőség, értékelési környezet, observability és ellenőrzött képességfejlesztés.",
       "decision_boundary": "Akkor válaszd, ha változtatás hatását, mérőszámot, tanulási módot vagy kiadási döntést kell választani.",
-      "module_ids": ["decision-guide.sft-or-rl", "pattern.experience-driven-improvement", "procedure.agent-evaluation-loop", "procedure.evaluation-environment-design", "pattern.task-distribution-coverage", "checklist.agent-observability", "decision-guide.metric-selection", "procedure.ablation-and-experiment-loop", "pattern.sft-rl-learning-boundary", "principle.environment-data-before-algorithm", "procedure.continual-improvement-release-loop"]
+      "module_ids": ["decision-guide.sft-or-rl", "pattern.experience-driven-improvement", "procedure.agent-evaluation-loop", "procedure.evaluation-environment-design", "pattern.task-distribution-coverage", "checklist.agent-observability", "decision-guide.metric-selection", "procedure.ablation-and-experiment-loop", "pattern.sft-rl-learning-boundary", "principle.environment-data-before-algorithm", "procedure.continual-improvement-release-loop", "experiment.task-success-baseline", "checklist.evaluation-environment-components", "procedure.tool-evaluation-environment", "procedure.hci-evaluation-environment", "procedure.evaluation-task-specification", "pattern.task-complexity-ladder", "checklist.objective-verifiability", "procedure.dataset-quality-loop", "concept.evaluation-metric-stack", "procedure.llm-judge-calibration", "procedure.pairwise-model-ranking", "decision-guide.model-selection-dimensions", "procedure.agent-cost-analysis", "procedure.statistical-significance-check", "procedure.benchmark-error-analysis", "procedure.improvement-hypothesis-roadmap", "pattern.two-layer-feature-flags", "procedure.prompt-sensitivity-assessment", "checklist.privacy-aware-analytics", "decision-guide.simulation-fidelity", "pattern.domain-randomization"]
     },
     {
       "id": "interaction-and-collaboration",
