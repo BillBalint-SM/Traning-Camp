@@ -275,6 +275,142 @@ def test_route_query_exposes_ambiguous_areas() -> None:
     }
 
 
+def test_route_query_uses_area_title_as_routing_evidence() -> None:
+    indexes = {
+        "l0": {
+            "areas": [
+                {"id": "alpha", "title": "Alpha domain", "aliases": ["a-only"]},
+                {"id": "beta", "title": "Beta domain", "aliases": ["b-only"]},
+            ]
+        },
+        "l1": {
+            "alpha": {
+                "modules": [
+                    {
+                        "id": "pattern.alpha",
+                        "title": "First operation",
+                        "tags": ["first"],
+                        "aliases": [],
+                    }
+                ]
+            },
+            "beta": {"modules": []},
+        },
+    }
+
+    result = route_query("Alpha domain first operation", indexes)
+
+    assert result == {
+        "status": "covered",
+        "area_id": "alpha",
+        "module_ids": ["pattern.alpha"],
+    }
+
+
+def test_route_query_prefers_exact_module_title_over_generic_tag_overlap() -> None:
+    indexes = {
+        "l0": {
+            "areas": [
+                {"id": "alpha", "title": "Alpha domain", "aliases": ["alpha"]}
+            ]
+        },
+        "l1": {
+            "alpha": {
+                "modules": [
+                    {
+                        "id": "pattern.distractor",
+                        "title": "Other operation",
+                        "tags": ["alpha", "target", "module"],
+                        "aliases": [],
+                    },
+                    {
+                        "id": "pattern.target",
+                        "title": "Target module",
+                        "tags": [],
+                        "aliases": [],
+                    },
+                ]
+            }
+        },
+    }
+
+    result = route_query("Alpha domain target module", indexes)
+
+    assert result == {
+        "status": "covered",
+        "area_id": "alpha",
+        "module_ids": ["pattern.target"],
+    }
+
+
+def test_route_query_prefers_exact_area_title_over_conflicting_alias() -> None:
+    indexes = {
+        "l0": {
+            "areas": [
+                {"id": "alpha", "title": "Alpha domain", "aliases": ["a-only"]},
+                {"id": "beta", "title": "Beta domain", "aliases": ["target"]},
+            ]
+        },
+        "l1": {
+            "alpha": {
+                "modules": [
+                    {
+                        "id": "pattern.alpha",
+                        "title": "Specific operation",
+                        "tags": ["specific"],
+                        "aliases": [],
+                    }
+                ]
+            },
+            "beta": {"modules": []},
+        },
+    }
+
+    result = route_query("Alpha domain target specific", indexes)
+
+    assert result == {
+        "status": "covered",
+        "area_id": "alpha",
+        "module_ids": ["pattern.alpha"],
+    }
+
+
+def test_route_query_excludes_area_title_tokens_from_module_ranking() -> None:
+    indexes = {
+        "l0": {
+            "areas": [
+                {"id": "alpha", "title": "Alpha domain", "aliases": ["a-only"]}
+            ]
+        },
+        "l1": {
+            "alpha": {
+                "modules": [
+                    {
+                        "id": "pattern.distractor",
+                        "title": "Other operation",
+                        "tags": ["alpha", "domain"],
+                        "aliases": [],
+                    },
+                    {
+                        "id": "pattern.target",
+                        "title": "Specific operation",
+                        "tags": ["specific"],
+                        "aliases": [],
+                    },
+                ]
+            }
+        },
+    }
+
+    result = route_query("Alpha domain specific", indexes)
+
+    assert result == {
+        "status": "covered",
+        "area_id": "alpha",
+        "module_ids": ["pattern.target"],
+    }
+
+
 def test_build_graph_resolves_every_edge() -> None:
     graph = build_graph(discover_modules(PACK_ROOT, SCHEMA_PATH))
 

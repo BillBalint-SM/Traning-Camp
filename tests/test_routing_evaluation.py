@@ -203,8 +203,8 @@ def _small_indexes() -> dict[str, object]:
             "format_version": 1,
             "scope": "l0",
             "areas": [
-                {"id": "alpha", "aliases": ["alpha"]},
-                {"id": "beta", "aliases": ["beta"]},
+                {"id": "alpha", "title": "Alpha domain", "aliases": ["alpha"]},
+                {"id": "beta", "title": "Beta domain", "aliases": ["beta"]},
             ],
         },
         "l1": {
