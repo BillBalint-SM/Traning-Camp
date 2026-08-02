@@ -3,42 +3,42 @@
     {
       "id": "core-agent-systems",
       "title": "Agent alaprendszerek",
-      "aliases": ["agent", "működési modell", "harness"],
-      "summary": "Az agent felépítése, felelősségi határai és alapvető képességei.",
-      "decision_boundary": "Akkor válaszd, ha a feladat modell, kontextus és eszköz együttműködéséről szól.",
-      "module_ids": ["principle.agent-operating-model"]
+      "aliases": ["működési modell", "harness", "workflow", "autonóm döntéshozatal"],
+      "summary": "Az agent felépítése, futtatási kerete, állapotkezelése és döntési módja.",
+      "decision_boundary": "Akkor válaszd, ha a feladat modell, kontextus, eszköz és orchestration együttműködéséről szól.",
+      "module_ids": ["principle.agent-operating-model", "principle.harness-engineering", "pattern.react-observe-act-loop", "decision-guide.workflow-or-autonomy", "checklist.agent-task-contract", "pattern.agent-status-representation", "failure-mode.model-only-system-design"]
     },
     {
       "id": "context-and-knowledge",
       "title": "Kontextus és tudás",
-      "aliases": ["kontextus", "memória", "keresés", "tömörítés", "kontextustömörítés"],
-      "summary": "A releváns információ kiválasztása, megőrzése és tömörítése.",
-      "decision_boundary": "Akkor válaszd, ha a kérdés a kontextuskeretről, memóriáról vagy visszakeresésről szól.",
-      "module_ids": ["decision-guide.memory-vs-retrieval", "pattern.context-budget-allocation", "pattern.context-compression", "principle.context-is-finite", "procedure.user-memory-lifecycle"]
+      "aliases": ["kontextus", "memória", "keresés", "tömörítés", "kontextustömörítés", "retrieval", "visszakeresés", "hibrid"],
+      "summary": "A releváns információ kiválasztása, megőrzése, gyorsítótárazása, tömörítése és visszakeresése.",
+      "decision_boundary": "Akkor válaszd, ha a kérdés a kontextuskeretről, memóriáról, tudásindexről vagy visszakeresésről szól.",
+      "module_ids": ["decision-guide.memory-vs-retrieval", "pattern.context-budget-allocation", "pattern.context-compression", "principle.context-is-finite", "procedure.user-memory-lifecycle", "concept.context-cache-architecture", "procedure.system-prompt-architecture", "checklist.prompt-injection-boundary", "pattern.dynamic-skill-loading", "pattern.hierarchical-context-compression", "procedure.retrieval-pipeline-design", "decision-guide.retrieval-strategy-selection", "concept.structured-knowledge-index"]
     },
     {
       "id": "tool-execution",
       "title": "Eszközhasználat",
-      "aliases": ["eszköz", "mcp", "végrehajtás", "jogosultság", "eszközszerződés"],
-      "summary": "Eszközszerződés, biztonsági korlát és feladathoz kötött képességválasztás.",
-      "decision_boundary": "Akkor válaszd, ha az agent külső műveletet vagy adatlekérést tervez.",
-      "module_ids": ["checklist.tool-safety-boundary", "pattern.tool-discovery", "procedure.tool-contract-design"]
+      "aliases": ["eszköz", "mcp", "mcp együttműködés", "végrehajtás", "jogosultság", "eszközszerződés", "aszinkron agent", "megszakítás", "esemény"],
+      "summary": "Eszközszerződés, képességválasztás, eseményvezérelt futás, megszakítás és eredményellenőrzés.",
+      "decision_boundary": "Akkor válaszd, ha az agent külső műveletet, adatlekérést vagy aszinkron végrehajtást tervez.",
+      "module_ids": ["checklist.tool-safety-boundary", "pattern.tool-discovery", "procedure.tool-contract-design", "concept.tool-capability-taxonomy", "decision-guide.tool-granularity", "pattern.event-driven-agent-execution", "procedure.async-interruption-handling", "checklist.tool-result-verification", "failure-mode.unsafe-tool-expansion"]
     },
     {
       "id": "evaluation-and-improvement",
       "title": "Értékelés és fejlesztés",
-      "aliases": ["értékelés", "mérés", "tanítás", "fejlesztés"],
-      "summary": "Mérhető agent minőség, visszajelzési ciklus és képességfejlesztési döntés.",
-      "decision_boundary": "Akkor válaszd, ha változtatás hatását vagy fejlesztési módszert kell kiválasztani.",
-      "module_ids": ["decision-guide.sft-or-rl", "pattern.experience-driven-improvement", "procedure.agent-evaluation-loop"]
+      "aliases": ["értékelés", "mérés", "tanítás", "fejlesztés", "agent observability", "observability", "megfigyelhetőség", "abláció"],
+      "summary": "Mérhető agent minőség, értékelési környezet, observability és ellenőrzött képességfejlesztés.",
+      "decision_boundary": "Akkor válaszd, ha változtatás hatását, mérőszámot, tanulási módot vagy kiadási döntést kell választani.",
+      "module_ids": ["decision-guide.sft-or-rl", "pattern.experience-driven-improvement", "procedure.agent-evaluation-loop", "procedure.evaluation-environment-design", "pattern.task-distribution-coverage", "checklist.agent-observability", "decision-guide.metric-selection", "procedure.ablation-and-experiment-loop", "pattern.sft-rl-learning-boundary", "principle.environment-data-before-algorithm", "procedure.continual-improvement-release-loop"]
     },
     {
       "id": "interaction-and-collaboration",
       "title": "Interakció és együttműködés",
-      "aliases": ["multimodális", "hang", "gui", "több agent"],
-      "summary": "Bizonytalan érzékelés, több-agent átadás és az önálló végrehajtás kontrollja.",
-      "decision_boundary": "Akkor válaszd, ha több csatorna vagy több agent közötti határ a kérdés.",
-      "module_ids": ["concept.multimodal-interaction-boundary", "failure-mode.unvalidated-autonomy", "pattern.multi-agent-context-boundaries"]
+      "aliases": ["multimodális", "hang", "gui", "több agent", "együttműködés", "átadás", "konkurencia"],
+      "summary": "Bizonytalan érzékelés, valós idejű interakció, több-agent átadás és közös állapot kontrollja.",
+      "decision_boundary": "Akkor válaszd, ha több csatorna, felületi művelet vagy több agent közötti határ a kérdés.",
+      "module_ids": ["concept.multimodal-interaction-boundary", "failure-mode.unvalidated-autonomy", "pattern.multi-agent-context-boundaries", "decision-guide.voice-architecture-selection", "pattern.fast-slow-interaction-loop", "procedure.gui-action-grounding", "principle.planning-control-separation", "decision-guide.multi-agent-topology-selection", "procedure.multi-agent-handoff-contract", "checklist.shared-state-concurrency-control", "failure-mode.multi-agent-error-amplification"]
     }
   ]
 }

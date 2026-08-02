@@ -12,20 +12,56 @@ SCHEMA_PATH = (
     / "knowledge-module.schema.json"
 )
 EXPECTED_IDS = {
+    "checklist.agent-observability",
+    "checklist.agent-task-contract",
+    "checklist.prompt-injection-boundary",
+    "checklist.shared-state-concurrency-control",
     "principle.agent-operating-model",
     "principle.context-is-finite",
+    "principle.environment-data-before-algorithm",
+    "principle.harness-engineering",
+    "principle.planning-control-separation",
     "pattern.context-budget-allocation",
     "pattern.context-compression",
+    "pattern.agent-status-representation",
+    "pattern.dynamic-skill-loading",
+    "pattern.event-driven-agent-execution",
+    "pattern.fast-slow-interaction-loop",
+    "pattern.hierarchical-context-compression",
     "decision-guide.memory-vs-retrieval",
+    "decision-guide.metric-selection",
+    "decision-guide.multi-agent-topology-selection",
+    "decision-guide.retrieval-strategy-selection",
+    "decision-guide.tool-granularity",
+    "decision-guide.voice-architecture-selection",
+    "decision-guide.workflow-or-autonomy",
+    "concept.context-cache-architecture",
+    "concept.structured-knowledge-index",
+    "concept.tool-capability-taxonomy",
     "procedure.user-memory-lifecycle",
+    "procedure.ablation-and-experiment-loop",
+    "procedure.async-interruption-handling",
+    "procedure.continual-improvement-release-loop",
+    "procedure.evaluation-environment-design",
+    "procedure.gui-action-grounding",
+    "procedure.multi-agent-handoff-contract",
+    "procedure.retrieval-pipeline-design",
+    "procedure.system-prompt-architecture",
     "procedure.tool-contract-design",
     "checklist.tool-safety-boundary",
+    "checklist.tool-result-verification",
     "pattern.tool-discovery",
+    "pattern.react-observe-act-loop",
     "procedure.agent-evaluation-loop",
     "decision-guide.sft-or-rl",
     "pattern.experience-driven-improvement",
+    "pattern.sft-rl-learning-boundary",
+    "pattern.task-distribution-coverage",
     "concept.multimodal-interaction-boundary",
     "pattern.multi-agent-context-boundaries",
+    "failure-mode.model-only-system-design",
+    "failure-mode.multi-agent-error-amplification",
+    "failure-mode.unsafe-tool-expansion",
     "failure-mode.unvalidated-autonomy",
 }
 
@@ -48,7 +84,7 @@ def _module(identifier: str, alias: str, target: str) -> dict[str, object]:
     }
 
 
-def test_discover_modules_returns_the_curated_v0_set() -> None:
+def test_discover_modules_returns_the_curated_v1_set() -> None:
     modules = discover_modules(PACK_ROOT, SCHEMA_PATH)
 
     assert {module["metadata"]["id"] for module in modules} == EXPECTED_IDS
