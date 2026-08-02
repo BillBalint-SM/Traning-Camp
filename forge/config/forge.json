@@ -1,0 +1,8 @@
+{
+  "inputs_dir": "inputs",
+  "provenance_dir": "private/provenance",
+  "extracted_dir": "work/extracted",
+  "normalized_dir": "work/normalized",
+  "derived_dir": "derived",
+  "dist_dir": "dist"
+}
