@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import pytest
-
 from knowledge_forge.errors import KnowledgeForgeError
 from knowledge_forge.paths import require_regular_file, resolve_within
 
