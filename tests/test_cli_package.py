@@ -4,6 +4,8 @@ from shutil import copytree
 
 import pytest
 from knowledge_forge.cli import run
+from knowledge_forge.io import canonical_json_bytes
+from knowledge_forge.portability import load_portable_context_graph
 
 ROOT = Path(__file__).parents[1]
 PACK_ROOT = ROOT / "pack"
@@ -27,6 +29,81 @@ def _portable_workspace(tmp_path: Path) -> Path:
         workspace / "exports" / "portable-exports-v10",
     )
     return workspace
+
+
+def _context_trace_arguments(workspace: Path) -> list[str]:
+    return [
+        "record-context-trace",
+        "--workspace",
+        str(workspace),
+        "--context",
+        "private/context.json",
+        "--query",
+        "Eszközszerződés",
+        "--depth",
+        "1",
+        "--route-ms",
+        "3",
+        "--load-ms",
+        "7",
+        "--total-ms",
+        "10",
+        "--trace",
+        "derived/context-traces.jsonl",
+    ]
+
+
+def test_cli_records_and_verifies_context_trace(tmp_path: Path, capsys: object) -> None:
+    workspace = _portable_workspace(tmp_path)
+    context = load_portable_context_graph(
+        workspace / "exports/portable-exports-v10",
+        "Eszközszerződés",
+        1,
+    )
+    context_path = workspace / "private/context.json"
+    context_path.parent.mkdir(parents=True, exist_ok=True)
+    context_path.write_bytes(canonical_json_bytes(context))
+
+    assert run(_context_trace_arguments(workspace)) == 0
+    record_summary = json.loads(capsys.readouterr().out)
+    assert record_summary["status"] == "PASS"
+    assert record_summary["record_count"] == 1
+    trace_path = workspace / "derived/context-traces.jsonl"
+    assert trace_path.is_file()
+
+    assert run(
+        [
+            "verify-context-trace",
+            "--workspace",
+            str(workspace),
+            "--trace",
+            "derived/context-traces.jsonl",
+            "--export",
+            "exports/portable-exports-v10",
+        ]
+    ) == 0
+    verify_summary = json.loads(capsys.readouterr().out)
+    assert verify_summary["status"] == "PASS"
+    assert verify_summary["record_count"] == 1
+
+
+def test_cli_rejects_existing_context_trace_output(tmp_path: Path, capsys: object) -> None:
+    workspace = _portable_workspace(tmp_path)
+    context = load_portable_context_graph(
+        workspace / "exports/portable-exports-v10",
+        "Eszközszerződés",
+        1,
+    )
+    context_path = workspace / "private/context.json"
+    context_path.parent.mkdir(parents=True, exist_ok=True)
+    context_path.write_bytes(canonical_json_bytes(context))
+    trace_path = workspace / "derived/context-traces.jsonl"
+    trace_path.parent.mkdir(parents=True, exist_ok=True)
+    trace_path.write_text("sentinel\n", encoding="utf-8")
+
+    assert run(_context_trace_arguments(workspace)) == 2
+    assert "already exists" in capsys.readouterr().err
+    assert trace_path.read_text(encoding="utf-8") == "sentinel\n"
 
 
 def test_cli_build_verify_route_and_archive_package(

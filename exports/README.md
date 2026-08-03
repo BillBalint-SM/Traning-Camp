@@ -35,3 +35,22 @@ Before distributing the bundle, validate the extracted Agent Skills profile:
 ```text
 uv run python tools/validate_agent_skills.py <extracted-bundle>/skill
 ```
+
+## Context measurement trace
+
+The portable context loader remains the content authority. When a runtime
+needs a reproducible measurement receipt, create a metadata-only JSONL trace
+explicitly; loading is not instrumented implicitly.
+
+```text
+# PowerShell: set $env:PYTHONIOENCODING = "utf-8" before redirecting JSON output.
+uv run knowledge-forge load-portable-context-graph --workspace . --export exports/portable-exports-v10 --query "Eszközszerződés" --depth 1 > private/context.json
+uv run knowledge-forge record-context-trace --workspace . --context private/context.json --query "Eszközszerződés" --depth 1 --route-ms 3 --load-ms 7 --total-ms 10 --trace derived/context-traces.jsonl
+uv run knowledge-forge verify-context-trace --workspace . --trace derived/context-traces.jsonl --export exports/portable-exports-v10
+```
+
+Each record contains only versioned route status, module identifiers and
+content hashes, relation/budget counts, timing fields, the export digest, and
+record digests. It does not contain the query, module text, model output, or
+telemetry transport data. Verification first validates the export and then
+binds every recorded module hash to that exact export.

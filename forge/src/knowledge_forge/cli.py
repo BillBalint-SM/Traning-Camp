@@ -21,12 +21,18 @@ from knowledge_forge.io import (
     write_jsonl_atomic,
 )
 from knowledge_forge.knowledge_map import build_knowledge_map_projection
+from knowledge_forge.measurement import (
+    build_context_trace,
+    verify_context_traces,
+    write_context_traces,
+)
 from knowledge_forge.models import ExtractedDocument, InputRecord, PdfProbe
 from knowledge_forge.normalize import normalize_documents
 from knowledge_forge.package import build_package, validate_package
 from knowledge_forge.paths import (
     resolve_existing_directory_within,
     resolve_new_directory_within,
+    resolve_new_file_within,
     resolve_regular_within,
     resolve_within,
 )
@@ -222,6 +228,21 @@ def _parser() -> argparse.ArgumentParser:
     load_portable_context_budgeted_parser.add_argument(
         "--max-chars", type=int, required=True
     )
+
+    record_context_trace_parser = subparsers.add_parser("record-context-trace")
+    _add_workspace(record_context_trace_parser)
+    record_context_trace_parser.add_argument("--context", type=Path, required=True)
+    record_context_trace_parser.add_argument("--query", required=True)
+    record_context_trace_parser.add_argument("--depth", type=int, required=True)
+    record_context_trace_parser.add_argument("--route-ms", type=int, required=True)
+    record_context_trace_parser.add_argument("--load-ms", type=int, required=True)
+    record_context_trace_parser.add_argument("--total-ms", type=int, required=True)
+    record_context_trace_parser.add_argument("--trace", type=Path, required=True)
+
+    verify_context_trace_parser = subparsers.add_parser("verify-context-trace")
+    _add_workspace(verify_context_trace_parser)
+    verify_context_trace_parser.add_argument("--trace", type=Path, required=True)
+    verify_context_trace_parser.add_argument("--export", type=Path, required=True)
     return parser
 
 
@@ -510,6 +531,65 @@ def _dispatch(namespace: argparse.Namespace) -> int:
             namespace.max_chars,
         )
         print(canonical_json_bytes(result).decode("utf-8"), end="")
+        return 0
+    if namespace.command == "record-context-trace":
+        context_path = resolve_regular_within(
+            workspace_root,
+            namespace.context,
+            "Portable context receipt",
+        )
+        context = read_json(context_path)
+        if not isinstance(context, dict):
+            raise KnowledgeForgeError("Portable context receipt root must be an object")
+        trace_path = resolve_new_file_within(
+            workspace_root,
+            namespace.trace,
+            "Context trace output",
+        )
+        trace = build_context_trace(
+            namespace.query,
+            cast(dict[str, object], context),
+            namespace.depth,
+            {
+                "route": namespace.route_ms,
+                "load": namespace.load_ms,
+                "total": namespace.total_ms,
+            },
+        )
+        write_context_traces(trace_path, [trace])
+        print(
+            canonical_json_bytes(
+                {
+                    "status": "PASS",
+                    "kind": "portable-context-trace",
+                    "record_count": 1,
+                    "trace_sha256": trace["trace_sha256"],
+                }
+            ).decode("utf-8"),
+            end="",
+        )
+        return 0
+    if namespace.command == "verify-context-trace":
+        records = verify_context_traces(
+            resolve_regular_within(workspace_root, namespace.trace, "Context trace"),
+            resolve_existing_directory_within(
+                workspace_root,
+                namespace.export,
+                "Portable export input",
+            ),
+        )
+        first_record = records[0]
+        print(
+            canonical_json_bytes(
+                {
+                    "status": "PASS",
+                    "kind": "portable-context-trace",
+                    "record_count": len(records),
+                    "export_sha256": first_record["export_sha256"],
+                }
+            ).decode("utf-8"),
+            end="",
+        )
         return 0
     raise KnowledgeForgeError(f"Unsupported command: {namespace.command}")
 
