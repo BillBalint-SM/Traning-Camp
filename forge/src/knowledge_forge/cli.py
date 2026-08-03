@@ -40,6 +40,10 @@ from knowledge_forge.portability import (
     route_portable_export,
     verify_portable_export,
 )
+from knowledge_forge.portable_archive import (
+    build_portable_bundle,
+    verify_portable_bundle,
+)
 from knowledge_forge.provenance import build_provenance_ledger
 from knowledge_forge.routing import route_query
 from knowledge_forge.routing_evaluation import verify_routing_evaluation
@@ -164,6 +168,15 @@ def _parser() -> argparse.ArgumentParser:
     _add_workspace(verify_portable_exports_parser)
     verify_portable_exports_parser.add_argument("--export", type=Path, required=True)
 
+    build_portable_bundle_parser = subparsers.add_parser("build-portable-bundle")
+    _add_workspace(build_portable_bundle_parser)
+    build_portable_bundle_parser.add_argument("--export", type=Path, required=True)
+    build_portable_bundle_parser.add_argument("--bundle", type=Path, required=True)
+
+    verify_portable_bundle_parser = subparsers.add_parser("verify-portable-bundle")
+    _add_workspace(verify_portable_bundle_parser)
+    verify_portable_bundle_parser.add_argument("--bundle", type=Path, required=True)
+
     diff_portable_exports_parser = subparsers.add_parser("diff-portable-exports")
     _add_workspace(diff_portable_exports_parser)
     diff_portable_exports_parser.add_argument("--base", type=Path, required=True)
@@ -233,6 +246,24 @@ def _load_markers(path: Path) -> list[str]:
     ):
         raise KnowledgeForgeError("Private marker file must be a JSON string array")
     return cast(list[str], payload)
+
+
+def _portable_bundle_summary(manifest: dict[str, object]) -> dict[str, object]:
+    entries = manifest.get("files")
+    export_sha256 = manifest.get("export_sha256")
+    kind = manifest.get("kind")
+    if (
+        not isinstance(entries, list)
+        or not isinstance(export_sha256, str)
+        or not isinstance(kind, str)
+    ):
+        raise KnowledgeForgeError("Portable bundle manifest summary is invalid")
+    return {
+        "status": "PASS",
+        "kind": kind,
+        "export_sha256": export_sha256,
+        "member_count": len(entries) + 1,
+    }
 
 
 def _dispatch(namespace: argparse.Namespace) -> int:
@@ -391,6 +422,33 @@ def _dispatch(namespace: argparse.Namespace) -> int:
             )
         )
         print(canonical_json_bytes(manifest).decode("utf-8"), end="")
+        return 0
+    if namespace.command == "build-portable-bundle":
+        manifest = build_portable_bundle(
+            resolve_existing_directory_within(
+                workspace_root,
+                namespace.export,
+                "Portable export input",
+            ),
+            resolve_within(workspace_root, namespace.bundle),
+        )
+        print(
+            canonical_json_bytes(_portable_bundle_summary(manifest)).decode("utf-8"),
+            end="",
+        )
+        return 0
+    if namespace.command == "verify-portable-bundle":
+        manifest = verify_portable_bundle(
+            resolve_regular_within(
+                workspace_root,
+                namespace.bundle,
+                "Portable bundle",
+            )
+        )
+        print(
+            canonical_json_bytes(_portable_bundle_summary(manifest)).decode("utf-8"),
+            end="",
+        )
         return 0
     if namespace.command == "diff-portable-exports":
         base_root = resolve_existing_directory_within(
