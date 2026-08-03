@@ -449,6 +449,13 @@ def _verify_graph_reference(
     payload = read_json(output_root / "skill" / "references" / "graph" / "canonical.json")
     if not isinstance(payload, dict):
         raise KnowledgeForgeError("Portable export canonical graph is invalid")
+    if "format_version" not in payload:
+        raise KnowledgeForgeError("canonical graph format version is missing")
+    format_version = payload["format_version"]
+    if not isinstance(format_version, int) or isinstance(format_version, bool):
+        raise KnowledgeForgeError("canonical graph format version is malformed")
+    if format_version != 1:
+        raise KnowledgeForgeError("canonical graph format version is incompatible")
     nodes = payload.get("nodes")
     edges = payload.get("edges")
     if not isinstance(nodes, list) or not isinstance(edges, list):
@@ -487,8 +494,13 @@ def _verify_graph_reference(
 
 def verify_portable_export(output_root: Path) -> dict[str, object]:
     manifest = _load_export_manifest(output_root)
-    if manifest.get("format_version") != 1:
-        raise KnowledgeForgeError("Portable export manifest has invalid format")
+    if "format_version" not in manifest:
+        raise KnowledgeForgeError("Portable export manifest format version is missing")
+    format_version = manifest["format_version"]
+    if not isinstance(format_version, int) or isinstance(format_version, bool):
+        raise KnowledgeForgeError("Portable export manifest format version is malformed")
+    if format_version != 1:
+        raise KnowledgeForgeError("Portable export manifest format version is incompatible")
     if manifest.get("kind") != "portable-agent-exports":
         raise KnowledgeForgeError("Portable export manifest has invalid kind")
     claimed_digest = manifest.get("export_sha256")
@@ -781,7 +793,16 @@ def _route_verified_portable_export(
     output_root: Path, query: str
 ) -> dict[str, object]:
     indexes = load_indexes(output_root / "skill" / "references")
-    return route_query(query, indexes)
+    l0 = cast(dict[str, object], indexes["l0"])
+    if "format_version" not in l0:
+        raise KnowledgeForgeError("routing L0 index format version is missing")
+    format_version = l0["format_version"]
+    if not isinstance(format_version, int) or isinstance(format_version, bool):
+        raise KnowledgeForgeError("routing L0 index format version is malformed")
+    if format_version != 1:
+        raise KnowledgeForgeError("routing L0 index format version is incompatible")
+    route = route_query(query, indexes)
+    return {"format_version": 1, **route}
 
 
 def route_portable_export(output_root: Path, query: str) -> dict[str, object]:
@@ -843,6 +864,7 @@ def _context_receipt_from_verified_export(
 ) -> dict[str, object]:
     _route_module_ids(route)
     context = dict(route)
+    context["format_version"] = 1
     context["export_sha256"] = cast(str, manifest["export_sha256"])
     context["modules"] = []
     return context
@@ -942,6 +964,7 @@ def load_portable_context_budgeted(
     context = _context_receipt_from_verified_export(route, manifest)
     module_ids = _route_module_ids(route)
     context["budget"] = {
+        "format_version": 1,
         "max_chars": max_chars,
         "used_chars": 0,
         "omitted_module_ids": [],
@@ -990,6 +1013,7 @@ def load_portable_context_budgeted(
         if edge["source"] in loaded_set and edge["target"] in loaded_set
     ]
     context["budget"] = {
+        "format_version": 1,
         "max_chars": max_chars,
         "used_chars": used_chars,
         "omitted_module_ids": omitted_ids,

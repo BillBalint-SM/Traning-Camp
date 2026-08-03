@@ -21,6 +21,9 @@ Ambiguous and not-covered responses also carry `export_sha256` and an empty
 `modules` list. The existing route fields, including alternatives, remain
 unchanged.
 
+Every receipt carries top-level `format_version: 1`; the version policy is
+shared with the graph and budget contracts.
+
 ## Integrity behavior
 
 - Verify the export once before routing or reading module bodies.

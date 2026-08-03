@@ -1,6 +1,6 @@
 # Portable context loader v14
 
-**Status:** Implementing
+**Status:** Implemented and verified
 
 ## Objective
 
@@ -19,6 +19,10 @@ list while preserving their routing fields.
 
 The CLI command `load-portable-context` accepts a workspace-relative export
 directory and query, emits canonical JSON, and performs no writes.
+
+The route and context response carries `format_version: 1`. The shared
+version policy and conformance commands are documented in the M1 consumer
+contract specification.
 
 ## Safety and determinism
 

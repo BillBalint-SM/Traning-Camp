@@ -22,6 +22,10 @@ if they cannot fit, the function fails closed. Neighbors are considered in
 lexicographic module-ID order. Relations with an omitted endpoint are omitted
 from the returned context.
 
+The receipt carries top-level `format_version: 1`, and `budget` carries its
+own `format_version: 1` so a consumer can pin both the envelope and the
+budget semantics independently.
+
 `max_chars` must be a positive integer no greater than 100,000. Graph depth
 keeps the v16 `0`/`1` limit.
 
