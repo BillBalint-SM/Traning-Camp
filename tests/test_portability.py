@@ -351,7 +351,7 @@ def test_route_portable_export_reproduces_routing_contract(tmp_path: Path) -> No
 
 def test_load_portable_context_returns_selected_markdown(tmp_path: Path) -> None:
     output_root = tmp_path / "derived" / "portable-exports"
-    build_portable_exports(PACK_ROOT, SCHEMA_ROOT, output_root)
+    manifest = build_portable_exports(PACK_ROOT, SCHEMA_ROOT, output_root)
 
     result = load_portable_context(output_root, "Eszközszerződés")
     module_path = (
@@ -361,16 +361,26 @@ def test_load_portable_context_returns_selected_markdown(tmp_path: Path) -> None
         / "knowledge"
         / "procedure.tool-contract-design.md"
     )
+    node_hashes = {
+        node["id"]: node["content_sha256"]
+        for node in _jsonl(output_root / "graph" / "nodes.jsonl")
+    }
 
     assert result["status"] == "covered"
     assert result["area_id"] == "tool-execution"
     assert result["module_ids"] == ["procedure.tool-contract-design"]
+    assert result["export_sha256"] == manifest["export_sha256"]
     assert result["modules"] == [
         {
             "id": "procedure.tool-contract-design",
+            "content_sha256": node_hashes["procedure.tool-contract-design"],
             "text": module_path.read_text(encoding="utf-8"),
         }
     ]
+    module = result["modules"][0]
+    assert module["content_sha256"] == sha256_bytes(
+        module["text"].encode("utf-8")
+    )
 
 
 @pytest.mark.parametrize(
@@ -381,10 +391,11 @@ def test_load_portable_context_does_not_load_unresolved_routes(
     tmp_path: Path, query: str
 ) -> None:
     output_root = tmp_path / "derived" / "portable-exports"
-    build_portable_exports(PACK_ROOT, SCHEMA_ROOT, output_root)
+    manifest = build_portable_exports(PACK_ROOT, SCHEMA_ROOT, output_root)
 
     result = load_portable_context(output_root, query)
 
+    assert result["export_sha256"] == manifest["export_sha256"]
     assert result["modules"] == []
 
 

@@ -775,10 +775,16 @@ def diff_portable_exports(base_root: Path, target_root: Path) -> dict[str, objec
     return delta
 
 
-def route_portable_export(output_root: Path, query: str) -> dict[str, object]:
-    verify_portable_export(output_root)
+def _route_verified_portable_export(
+    output_root: Path, query: str
+) -> dict[str, object]:
     indexes = load_indexes(output_root / "skill" / "references")
     return route_query(query, indexes)
+
+
+def route_portable_export(output_root: Path, query: str) -> dict[str, object]:
+    verify_portable_export(output_root)
+    return _route_verified_portable_export(output_root, query)
 
 
 def _portable_module_path(output_root: Path, module_id: str) -> Path:
@@ -802,7 +808,8 @@ def _portable_module_path(output_root: Path, module_id: str) -> Path:
 
 
 def load_portable_context(output_root: Path, query: str) -> dict[str, object]:
-    route = route_portable_export(output_root, query)
+    manifest = verify_portable_export(output_root)
+    route = _route_verified_portable_export(output_root, query)
     module_ids_value = route.get("module_ids")
     if not isinstance(module_ids_value, list) or not all(
         isinstance(module_id, str) and module_id for module_id in module_ids_value
@@ -811,13 +818,16 @@ def load_portable_context(output_root: Path, query: str) -> dict[str, object]:
     module_ids = cast(list[str], module_ids_value)
     if route.get("status") != "covered":
         context = dict(route)
+        context["export_sha256"] = cast(str, manifest["export_sha256"])
         context["modules"] = []
         return context
     if len(module_ids) != len(set(module_ids)):
         raise KnowledgeForgeError("Portable export route module IDs are duplicated")
+    module_hashes = _export_module_hashes(output_root)
     modules = [
         {
             "id": module_id,
+            "content_sha256": module_hashes[module_id],
             "text": _portable_module_path(output_root, module_id).read_text(
                 encoding="utf-8"
             ),
@@ -825,5 +835,6 @@ def load_portable_context(output_root: Path, query: str) -> dict[str, object]:
         for module_id in sorted(module_ids)
     ]
     context = dict(route)
+    context["export_sha256"] = cast(str, manifest["export_sha256"])
     context["modules"] = modules
     return context

@@ -890,7 +890,14 @@ def test_cli_loads_portable_context_read_only(
     result = json.loads(capsys.readouterr().out)
     assert result["status"] == "covered"
     assert result["module_ids"] == ["procedure.tool-contract-design"]
+    export_manifest = json.loads(
+        (workspace / "derived" / "portable-exports" / "export.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert result["export_sha256"] == export_manifest["export_sha256"]
     assert result["modules"][0]["id"] == "procedure.tool-contract-design"
+    assert len(result["modules"][0]["content_sha256"]) == 64
     assert "Eszközszerződés" in result["modules"][0]["text"]
     after = {
         path.relative_to(workspace).as_posix(): path.read_bytes()
