@@ -1,7 +1,7 @@
 import stat
 from pathlib import Path
 from shutil import copytree
-from zipfile import ZIP_DEFLATED, ZIP_STORED, ZipFile
+from zipfile import ZIP_DEFLATED, ZIP_STORED, ZipFile, ZipInfo
 
 import pytest
 from knowledge_forge.errors import KnowledgeForgeError
@@ -110,23 +110,26 @@ def test_verify_portable_bundle_rejects_missing_and_extra_members(
 ) -> None:
     bundle_path = tmp_path / "portable.zip"
     build_portable_bundle(EXPORT_ROOT, bundle_path)
-    with ZipFile(bundle_path) as archive:
-        members = [
-            (info.filename, archive.read(info)) for info in archive.infolist()
-        ]
 
     missing_path = tmp_path / "missing.zip"
-    with ZipFile(missing_path, "w") as archive:
-        for name, content in members[:-1]:
-            archive.writestr(name, content)
+    with ZipFile(missing_path, "w") as archive, ZipFile(bundle_path) as source:
+        for info in source.infolist()[:-1]:
+            archive.writestr(info, source.read(info))
     with pytest.raises(KnowledgeForgeError, match="inventory"):
         verify_portable_bundle(missing_path)
 
     extra_path = tmp_path / "extra.zip"
+    with ZipFile(bundle_path) as source:
+        members = [
+            (info.filename, source.read(info)) for info in source.infolist()
+        ]
     with ZipFile(extra_path, "w") as archive:
-        for name, content in members:
-            archive.writestr(name, content)
-        archive.writestr("extra.txt", b"unexpected")
+        for name, content in sorted([*members, ("extra.txt", b"unexpected")]):
+            info = ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
+            info.compress_type = ZIP_STORED
+            info.create_system = 3
+            info.external_attr = (stat.S_IFREG | 0o644) << 16
+            archive.writestr(info, content)
     with pytest.raises(KnowledgeForgeError, match="inventory"):
         verify_portable_bundle(extra_path)
 
