@@ -15,6 +15,8 @@ from knowledge_forge.package import discover_modules
 from knowledge_forge.paths import resolve_regular_within
 from knowledge_forge.routing import route_query
 
+_MAX_PORTABLE_CONTEXT_CHARS = 100_000
+
 
 def _area_ownership(areas: list[dict[str, object]]) -> dict[str, str]:
     ownership: dict[str, str] = {}
@@ -866,6 +868,18 @@ def _validate_relation_depth(relation_depth: int) -> None:
         raise KnowledgeForgeError("Portable context relation depth must be 0 or 1")
 
 
+def _validate_character_budget(max_chars: int) -> None:
+    if (
+        isinstance(max_chars, bool)
+        or not isinstance(max_chars, int)
+        or max_chars <= 0
+        or max_chars > _MAX_PORTABLE_CONTEXT_CHARS
+    ):
+        raise KnowledgeForgeError(
+            "Portable context character budget must be between 1 and 100000"
+        )
+
+
 def _direct_portable_relations(
     output_root: Path, module_ids: list[str]
 ) -> tuple[list[str], list[dict[str, str]]]:
@@ -912,4 +926,72 @@ def load_portable_context_graph(
     context["expanded_module_ids"] = expanded_ids
     context["relations"] = relations
     context["modules"] = _load_portable_modules(output_root, expanded_ids)
+    return context
+
+
+def load_portable_context_budgeted(
+    output_root: Path,
+    query: str,
+    relation_depth: int,
+    max_chars: int,
+) -> dict[str, object]:
+    _validate_relation_depth(relation_depth)
+    _validate_character_budget(max_chars)
+    manifest = verify_portable_export(output_root)
+    route = _route_verified_portable_export(output_root, query)
+    context = _context_receipt_from_verified_export(route, manifest)
+    module_ids = _route_module_ids(route)
+    context["budget"] = {
+        "max_chars": max_chars,
+        "used_chars": 0,
+        "omitted_module_ids": [],
+    }
+    if route.get("status") != "covered":
+        context["expanded_module_ids"] = []
+        context["relations"] = []
+        return context
+    if relation_depth == 0:
+        candidate_ids = sorted(module_ids)
+        candidate_relations: list[dict[str, str]] = []
+    else:
+        candidate_ids, candidate_relations = _direct_portable_relations(
+            output_root, module_ids
+        )
+    candidate_modules = {
+        cast(str, module["id"]): module
+        for module in _load_portable_modules(output_root, candidate_ids)
+    }
+    ordered_ids = sorted(module_ids) + sorted(set(candidate_ids) - set(module_ids))
+    loaded_ids: list[str] = []
+    omitted_ids: list[str] = []
+    used_chars = 0
+    for module_id in ordered_ids:
+        module = candidate_modules[module_id]
+        text = cast(str, module["text"])
+        module_chars = len(text)
+        if used_chars + module_chars > max_chars:
+            if module_id in module_ids:
+                raise KnowledgeForgeError(
+                    "Portable context primary modules exceed character budget"
+                )
+            omitted_ids.append(module_id)
+            continue
+        loaded_ids.append(module_id)
+        used_chars += module_chars
+    loaded_set = set(loaded_ids)
+    sorted_loaded_ids = sorted(loaded_ids)
+    context["modules"] = [
+        candidate_modules[module_id] for module_id in sorted_loaded_ids
+    ]
+    context["expanded_module_ids"] = sorted_loaded_ids
+    context["relations"] = [
+        edge
+        for edge in candidate_relations
+        if edge["source"] in loaded_set and edge["target"] in loaded_set
+    ]
+    context["budget"] = {
+        "max_chars": max_chars,
+        "used_chars": used_chars,
+        "omitted_module_ids": omitted_ids,
+    }
     return context

@@ -12,6 +12,7 @@ from knowledge_forge.portability import (
     build_portable_exports,
     diff_portable_exports,
     load_portable_context,
+    load_portable_context_budgeted,
     load_portable_context_graph,
     route_portable_export,
     verify_portable_export,
@@ -488,6 +489,90 @@ def test_load_portable_context_graph_rejects_invalid_depth(
 
     with pytest.raises(KnowledgeForgeError, match="relation depth"):
         load_portable_context_graph(output_root, "Eszközszerződés", depth)
+
+
+def test_load_portable_context_budgeted_keeps_primary_and_records_omissions(
+    tmp_path: Path,
+) -> None:
+    output_root = tmp_path / "derived" / "portable-exports"
+    build_portable_exports(PACK_ROOT, SCHEMA_ROOT, output_root)
+    primary_path = (
+        output_root
+        / "skill"
+        / "references"
+        / "knowledge"
+        / "procedure.tool-contract-design.md"
+    )
+    primary_chars = len(primary_path.read_text(encoding="utf-8"))
+
+    result = load_portable_context_budgeted(
+        output_root, "Eszközszerződés", 1, primary_chars + 1
+    )
+
+    assert result["module_ids"] == ["procedure.tool-contract-design"]
+    assert result["expanded_module_ids"] == ["procedure.tool-contract-design"]
+    assert len(result["modules"]) == 1
+    budget = result["budget"]
+    assert budget["max_chars"] == primary_chars + 1
+    assert budget["used_chars"] == primary_chars
+    assert len(budget["omitted_module_ids"]) == 8
+    assert result["relations"] == []
+
+
+def test_load_portable_context_budgeted_admits_deterministic_neighbor(
+    tmp_path: Path,
+) -> None:
+    output_root = tmp_path / "derived" / "portable-exports"
+    build_portable_exports(PACK_ROOT, SCHEMA_ROOT, output_root)
+    primary_id = "procedure.tool-contract-design"
+    primary_chars = len(
+        (
+            output_root
+            / "skill"
+            / "references"
+            / "knowledge"
+            / f"{primary_id}.md"
+        ).read_text(encoding="utf-8")
+    )
+    neighbor_id = "checklist.tool-safety-boundary"
+    neighbor_chars = len(
+        (
+            output_root
+            / "skill"
+            / "references"
+            / "knowledge"
+            / f"{neighbor_id}.md"
+        ).read_text(encoding="utf-8")
+    )
+
+    result = load_portable_context_budgeted(
+        output_root,
+        "Eszközszerződés",
+        1,
+        primary_chars + neighbor_chars,
+    )
+
+    assert result["expanded_module_ids"] == [neighbor_id, primary_id]
+    assert result["budget"]["used_chars"] == primary_chars + neighbor_chars
+    assert neighbor_id not in result["budget"]["omitted_module_ids"]
+    assert all(
+        edge["source"] in result["expanded_module_ids"]
+        and edge["target"] in result["expanded_module_ids"]
+        for edge in result["relations"]
+    )
+
+
+@pytest.mark.parametrize("max_chars", [-1, 0, 100001, True, 1.5])
+def test_load_portable_context_budgeted_rejects_invalid_budget(
+    tmp_path: Path, max_chars: object
+) -> None:
+    output_root = tmp_path / "derived" / "portable-exports"
+    build_portable_exports(PACK_ROOT, SCHEMA_ROOT, output_root)
+
+    with pytest.raises(KnowledgeForgeError, match="character budget"):
+        load_portable_context_budgeted(
+            output_root, "Eszközszerződés", 1, max_chars
+        )
 
 
 @pytest.mark.parametrize(

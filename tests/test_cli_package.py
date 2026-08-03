@@ -734,6 +734,24 @@ def _load_portable_context_graph_arguments(
     ]
 
 
+def _load_portable_context_budgeted_arguments(
+    workspace: Path, query: str, depth: str, max_chars: str
+) -> list[str]:
+    return [
+        "load-portable-context-budgeted",
+        "--workspace",
+        str(workspace),
+        "--export",
+        "derived/portable-exports",
+        "--query",
+        query,
+        "--depth",
+        depth,
+        "--max-chars",
+        max_chars,
+    ]
+
+
 def test_cli_builds_portable_exports(tmp_path: Path) -> None:
     workspace = _workspace(tmp_path)
 
@@ -978,6 +996,52 @@ def test_cli_rejects_graph_context_depth_above_limit(
         )
     ) == 2
     assert "relation depth" in capsys.readouterr().err
+
+
+def test_cli_loads_budgeted_context_read_only(
+    tmp_path: Path, capsys: object
+) -> None:
+    workspace = _workspace(tmp_path)
+    assert run(_portable_exports_arguments(workspace)) == 0
+    before = {
+        path.relative_to(workspace).as_posix(): path.read_bytes()
+        for path in workspace.rglob("*")
+        if path.is_file()
+    }
+
+    assert run(
+        _load_portable_context_budgeted_arguments(
+            workspace, "Eszközszerződés", "1", "2000"
+        )
+    ) == 0
+
+    result = json.loads(capsys.readouterr().out)
+    assert result["module_ids"] == ["procedure.tool-contract-design"]
+    assert result["budget"]["used_chars"] <= 2000
+    assert result["budget"]["omitted_module_ids"]
+    assert result["expanded_module_ids"] == [
+        module["id"] for module in result["modules"]
+    ]
+    after = {
+        path.relative_to(workspace).as_posix(): path.read_bytes()
+        for path in workspace.rglob("*")
+        if path.is_file()
+    }
+    assert after == before
+
+
+def test_cli_rejects_budget_above_limit(
+    tmp_path: Path, capsys: object
+) -> None:
+    workspace = _workspace(tmp_path)
+    assert run(_portable_exports_arguments(workspace)) == 0
+
+    assert run(
+        _load_portable_context_budgeted_arguments(
+            workspace, "Eszközszerződés", "1", "100001"
+        )
+    ) == 2
+    assert "character budget" in capsys.readouterr().err
 
 
 def test_cli_rejects_portable_export_route_absolute_path(

@@ -35,6 +35,7 @@ from knowledge_forge.portability import (
     build_portable_exports,
     diff_portable_exports,
     load_portable_context,
+    load_portable_context_budgeted,
     load_portable_context_graph,
     route_portable_export,
     verify_portable_export,
@@ -193,6 +194,21 @@ def _parser() -> argparse.ArgumentParser:
     )
     load_portable_context_graph_parser.add_argument("--query", required=True)
     load_portable_context_graph_parser.add_argument("--depth", type=int, required=True)
+
+    load_portable_context_budgeted_parser = subparsers.add_parser(
+        "load-portable-context-budgeted"
+    )
+    _add_workspace(load_portable_context_budgeted_parser)
+    load_portable_context_budgeted_parser.add_argument(
+        "--export", type=Path, required=True
+    )
+    load_portable_context_budgeted_parser.add_argument("--query", required=True)
+    load_portable_context_budgeted_parser.add_argument(
+        "--depth", type=int, required=True
+    )
+    load_portable_context_budgeted_parser.add_argument(
+        "--max-chars", type=int, required=True
+    )
     return parser
 
 
@@ -421,6 +437,19 @@ def _dispatch(namespace: argparse.Namespace) -> int:
             ),
             namespace.query,
             namespace.depth,
+        )
+        print(canonical_json_bytes(result).decode("utf-8"), end="")
+        return 0
+    if namespace.command == "load-portable-context-budgeted":
+        result = load_portable_context_budgeted(
+            resolve_existing_directory_within(
+                workspace_root,
+                namespace.export,
+                "Portable export input",
+            ),
+            namespace.query,
+            namespace.depth,
+            namespace.max_chars,
         )
         print(canonical_json_bytes(result).decode("utf-8"), end="")
         return 0
