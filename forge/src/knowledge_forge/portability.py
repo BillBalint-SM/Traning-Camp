@@ -618,3 +618,156 @@ def build_portable_exports(
     )
     _write_export(output_root, files, manifest)
     return manifest
+
+
+def _export_module_hashes(output_root: Path) -> dict[str, str]:
+    nodes = read_jsonl(output_root / "graph" / "nodes.jsonl")
+    return {
+        cast(str, node["id"]): cast(str, node["content_sha256"])
+        for node in nodes
+    }
+
+
+def _export_relations(output_root: Path) -> set[tuple[str, str, str]]:
+    edges = read_jsonl(output_root / "graph" / "edges.jsonl")
+    return {
+        (
+            cast(str, edge["source"]),
+            cast(str, edge["type"]),
+            cast(str, edge["target"]),
+        )
+        for edge in edges
+    }
+
+
+def _export_area_hashes(output_root: Path) -> dict[str, str]:
+    payload = read_json(
+        output_root / "skill" / "references" / "indexes" / "areas.json"
+    )
+    if not isinstance(payload, dict):
+        raise KnowledgeForgeError("Portable export areas index is invalid")
+    areas = payload.get("areas")
+    if not isinstance(areas, list):
+        raise KnowledgeForgeError("Portable export areas index is incomplete")
+    hashes: dict[str, str] = {}
+    for area in areas:
+        if not isinstance(area, dict) or not isinstance(area.get("id"), str):
+            raise KnowledgeForgeError("Portable export area record is invalid")
+        area_id = cast(str, area["id"])
+        if area_id in hashes:
+            raise KnowledgeForgeError(f"Portable export area is duplicated: {area_id}")
+        hashes[area_id] = sha256_bytes(canonical_json_bytes(area))
+    return hashes
+
+
+def _export_file_hashes(manifest: dict[str, object]) -> dict[str, str]:
+    entries = manifest.get("files")
+    if not isinstance(entries, list):
+        raise KnowledgeForgeError("Portable export manifest files are invalid")
+    return {
+        cast(str, entry["path"]): cast(str, entry["sha256"])
+        for entry in entries
+        if isinstance(entry, dict)
+    }
+
+
+def _relation_records(
+    relations: set[tuple[str, str, str]],
+) -> list[dict[str, str]]:
+    return [
+        {"source": source, "type": relation_type, "target": target}
+        for source, relation_type, target in sorted(relations)
+    ]
+
+
+def diff_portable_exports(base_root: Path, target_root: Path) -> dict[str, object]:
+    base_manifest = verify_portable_export(base_root)
+    target_manifest = verify_portable_export(target_root)
+    base_module_hashes = _export_module_hashes(base_root)
+    target_module_hashes = _export_module_hashes(target_root)
+    base_module_ids = set(base_module_hashes)
+    target_module_ids = set(target_module_hashes)
+    common_module_ids = base_module_ids & target_module_ids
+    changed_modules = sorted(
+        module_id
+        for module_id in common_module_ids
+        if base_module_hashes[module_id] != target_module_hashes[module_id]
+    )
+    added_modules = sorted(target_module_ids - base_module_ids)
+    removed_modules = sorted(base_module_ids - target_module_ids)
+
+    base_area_hashes = _export_area_hashes(base_root)
+    target_area_hashes = _export_area_hashes(target_root)
+    common_area_ids = set(base_area_hashes) & set(target_area_hashes)
+    changed_areas = sorted(
+        area_id
+        for area_id in common_area_ids
+        if base_area_hashes[area_id] != target_area_hashes[area_id]
+    )
+    added_areas = sorted(set(target_area_hashes) - set(base_area_hashes))
+    removed_areas = sorted(set(base_area_hashes) - set(target_area_hashes))
+
+    base_relations = _export_relations(base_root)
+    target_relations = _export_relations(target_root)
+    added_relations = target_relations - base_relations
+    removed_relations = base_relations - target_relations
+
+    base_file_hashes = _export_file_hashes(base_manifest)
+    target_file_hashes = _export_file_hashes(target_manifest)
+    base_file_paths = set(base_file_hashes)
+    target_file_paths = set(target_file_hashes)
+    common_file_paths = base_file_paths & target_file_paths
+    changed_files = sorted(
+        path
+        for path in common_file_paths
+        if base_file_hashes[path] != target_file_hashes[path]
+    )
+    added_files = sorted(target_file_paths - base_file_paths)
+    removed_files = sorted(base_file_paths - target_file_paths)
+
+    base_export_sha256 = cast(str, base_manifest["export_sha256"])
+    target_export_sha256 = cast(str, target_manifest["export_sha256"])
+    delta: dict[str, object] = {
+        "format_version": 1,
+        "kind": "portable-agent-export-delta",
+        "base_export_sha256": base_export_sha256,
+        "target_export_sha256": target_export_sha256,
+        "status": "changed"
+        if (
+            base_export_sha256 != target_export_sha256
+            or added_modules
+            or removed_modules
+            or changed_modules
+            or added_areas
+            or removed_areas
+            or changed_areas
+            or added_relations
+            or removed_relations
+            or added_files
+            or removed_files
+            or changed_files
+        )
+        else "unchanged",
+        "modules": {
+            "added": added_modules,
+            "removed": removed_modules,
+            "changed": changed_modules,
+            "unchanged_count": len(common_module_ids) - len(changed_modules),
+        },
+        "areas": {
+            "added": added_areas,
+            "removed": removed_areas,
+            "changed": changed_areas,
+        },
+        "relations": {
+            "added": _relation_records(added_relations),
+            "removed": _relation_records(removed_relations),
+        },
+        "files": {
+            "added": added_files,
+            "removed": removed_files,
+            "changed": changed_files,
+        },
+    }
+    delta["delta_sha256"] = sha256_bytes(canonical_json_bytes(delta))
+    return delta

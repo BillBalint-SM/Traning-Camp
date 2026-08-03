@@ -31,7 +31,11 @@ from knowledge_forge.paths import (
     resolve_within,
 )
 from knowledge_forge.pdf_probe import DEFAULT_PDF_LIMITS, probe_pdf
-from knowledge_forge.portability import build_portable_exports, verify_portable_export
+from knowledge_forge.portability import (
+    build_portable_exports,
+    diff_portable_exports,
+    verify_portable_export,
+)
 from knowledge_forge.provenance import build_provenance_ledger
 from knowledge_forge.routing import route_query
 from knowledge_forge.routing_evaluation import verify_routing_evaluation
@@ -155,6 +159,11 @@ def _parser() -> argparse.ArgumentParser:
     )
     _add_workspace(verify_portable_exports_parser)
     verify_portable_exports_parser.add_argument("--export", type=Path, required=True)
+
+    diff_portable_exports_parser = subparsers.add_parser("diff-portable-exports")
+    _add_workspace(diff_portable_exports_parser)
+    diff_portable_exports_parser.add_argument("--base", type=Path, required=True)
+    diff_portable_exports_parser.add_argument("--target", type=Path, required=True)
     return parser
 
 
@@ -337,6 +346,20 @@ def _dispatch(namespace: argparse.Namespace) -> int:
             )
         )
         print(canonical_json_bytes(manifest).decode("utf-8"), end="")
+        return 0
+    if namespace.command == "diff-portable-exports":
+        base_root = resolve_existing_directory_within(
+            workspace_root,
+            namespace.base,
+            "Portable export base",
+        )
+        target_root = resolve_existing_directory_within(
+            workspace_root,
+            namespace.target,
+            "Portable export target",
+        )
+        delta = diff_portable_exports(base_root, target_root)
+        print(canonical_json_bytes(delta).decode("utf-8"), end="")
         return 0
     raise KnowledgeForgeError(f"Unsupported command: {namespace.command}")
 

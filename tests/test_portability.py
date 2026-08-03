@@ -10,6 +10,7 @@ from knowledge_forge.hashing import sha256_bytes
 from knowledge_forge.io import canonical_json_bytes
 from knowledge_forge.portability import (
     build_portable_exports,
+    diff_portable_exports,
     verify_portable_export,
 )
 
@@ -50,6 +51,51 @@ def _refresh_manifest(output_root: Path) -> None:
         canonical_json_bytes(manifest_without_digest)
     )
     manifest_path.write_bytes(canonical_json_bytes(manifest))
+
+
+def _mutate_valid_export(output_root: Path) -> tuple[str, str]:
+    rag_path = output_root / "rag" / "documents.jsonl"
+    records = _jsonl(rag_path)
+    module_id = cast(str, records[0]["id"])
+    records[0]["text"] = cast(str, records[0]["text"]) + "\n\nDelta változás.\n"
+    rag_path.write_bytes(b"".join(canonical_json_bytes(record) for record in records))
+    module_path = output_root / "skill" / "references" / "knowledge" / f"{module_id}.md"
+    module_path.write_bytes(cast(str, records[0]["text"]).encode("utf-8"))
+    content_sha256 = sha256_bytes(cast(str, records[0]["text"]).encode("utf-8"))
+
+    nodes_path = output_root / "graph" / "nodes.jsonl"
+    nodes = _jsonl(nodes_path)
+    for node in nodes:
+        if node["id"] == module_id:
+            node["content_sha256"] = content_sha256
+    nodes_path.write_bytes(b"".join(canonical_json_bytes(node) for node in nodes))
+
+    canonical_path = output_root / "skill" / "references" / "graph" / "canonical.json"
+    canonical = _read_json(canonical_path)
+    canonical_nodes = cast(list[dict[str, object]], canonical["nodes"])
+    for node in canonical_nodes:
+        if node["id"] == module_id:
+            node["content_sha256"] = content_sha256
+    canonical_edges = cast(list[dict[str, object]], canonical["edges"])
+    old_edge = canonical_edges[0]
+    old_edge["target"] = cast(str, canonical_nodes[0]["id"])
+    if old_edge["source"] == old_edge["target"]:
+        old_edge["target"] = cast(str, canonical_nodes[1]["id"])
+    old_edge["type"] = "delta_relation"
+    canonical_path.write_bytes(canonical_json_bytes(canonical))
+    edges_path = output_root / "graph" / "edges.jsonl"
+    edges = _jsonl(edges_path)
+    edges[0] = canonical_edges[0]
+    edges_path.write_bytes(b"".join(canonical_json_bytes(edge) for edge in edges))
+
+    areas_path = output_root / "skill" / "references" / "indexes" / "areas.json"
+    areas = _read_json(areas_path)
+    area_records = cast(list[dict[str, object]], areas["areas"])
+    changed_area_id = cast(str, area_records[0]["id"])
+    area_records[0]["summary"] = "Módosított area összefoglaló."
+    areas_path.write_bytes(canonical_json_bytes(areas))
+    _refresh_manifest(output_root)
+    return module_id, changed_area_id
 
 
 def test_build_portable_exports_renders_three_complete_profiles(
@@ -233,6 +279,50 @@ def test_verify_portable_export_rejects_profile_count_drift(tmp_path: Path) -> N
 
     with pytest.raises(KnowledgeForgeError, match="profile"):
         verify_portable_export(output_root)
+
+
+def test_diff_portable_exports_reports_unchanged_exports(tmp_path: Path) -> None:
+    first_root = tmp_path / "derived" / "first"
+    second_root = tmp_path / "derived" / "second"
+    build_portable_exports(PACK_ROOT, SCHEMA_ROOT, first_root)
+    build_portable_exports(PACK_ROOT, SCHEMA_ROOT, second_root)
+
+    delta = diff_portable_exports(first_root, second_root)
+
+    assert delta["kind"] == "portable-agent-export-delta"
+    assert delta["status"] == "unchanged"
+    assert delta["modules"] == {
+        "added": [],
+        "removed": [],
+        "changed": [],
+        "unchanged_count": 193,
+    }
+    assert delta["relations"] == {"added": [], "removed": []}
+    assert isinstance(delta["delta_sha256"], str)
+    assert delta == diff_portable_exports(first_root, second_root)
+
+
+def test_diff_portable_exports_reports_valid_target_changes(tmp_path: Path) -> None:
+    base_root = tmp_path / "derived" / "base"
+    target_root = tmp_path / "derived" / "target"
+    build_portable_exports(PACK_ROOT, SCHEMA_ROOT, base_root)
+    build_portable_exports(PACK_ROOT, SCHEMA_ROOT, target_root)
+    module_id, area_id = _mutate_valid_export(target_root)
+
+    delta = diff_portable_exports(base_root, target_root)
+
+    assert delta["status"] == "changed"
+    modules = cast(dict[str, object], delta["modules"])
+    assert modules["changed"] == [module_id]
+    assert modules["unchanged_count"] == 192
+    areas = cast(dict[str, object], delta["areas"])
+    assert areas["changed"] == [area_id]
+    relations = cast(dict[str, object], delta["relations"])
+    assert len(cast(list[object], relations["added"])) == 1
+    assert len(cast(list[object], relations["removed"])) == 1
+    files = cast(dict[str, object], delta["files"])
+    assert "rag/documents.jsonl" in files["changed"]
+    assert "graph/edges.jsonl" in files["changed"]
 
 
 @pytest.mark.parametrize(

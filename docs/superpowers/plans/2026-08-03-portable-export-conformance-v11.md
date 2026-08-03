@@ -30,6 +30,9 @@
 
 - [x] Run full pytest and Ruff.
 - [x] Re-run package, routing, neutrality, and archive regression gates.
-- [ ] Review diff and changed-path allowlist, then commit the v11 slice.
-- [ ] Push `dev-knowledge-next-v11`, fast-forward merge into `feature`, push
+- [x] Review diff and changed-path allowlist, then commit the v11 slice.
+- [x] Push `dev-knowledge-next-v11`, fast-forward merge into `feature`, push
   `feature`, and create the next clean dev worktree.
+
+Delivery evidence: commit `a29c4ad` was pushed to the local forge, fast-forward
+merged into `feature`, and followed by clean `dev-knowledge-next-v12` creation.

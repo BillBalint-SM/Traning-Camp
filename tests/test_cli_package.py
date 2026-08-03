@@ -682,6 +682,18 @@ def _verify_portable_exports_arguments(workspace: Path) -> list[str]:
     ]
 
 
+def _diff_portable_exports_arguments(workspace: Path) -> list[str]:
+    return [
+        "diff-portable-exports",
+        "--workspace",
+        str(workspace),
+        "--base",
+        "derived/base",
+        "--target",
+        "derived/target",
+    ]
+
+
 def test_cli_builds_portable_exports(tmp_path: Path) -> None:
     workspace = _workspace(tmp_path)
 
@@ -747,6 +759,68 @@ def test_cli_rejects_portable_exports_verification_symlink_ancestor(
         pytest.skip("Symlink creation is unavailable")
     arguments = _verify_portable_exports_arguments(workspace)
     arguments[arguments.index("--export") + 1] = "derived/linked/portable-exports"
+
+    assert run(arguments) == 2
+    assert "symbolic link" in capsys.readouterr().err
+
+
+def test_cli_diffs_portable_exports_read_only(
+    tmp_path: Path, capsys: object
+) -> None:
+    workspace = _workspace(tmp_path)
+    build_arguments = _portable_exports_arguments(workspace)
+    build_arguments[build_arguments.index("--output") + 1] = "derived/base"
+    assert run(build_arguments) == 0
+    build_arguments[build_arguments.index("--output") + 1] = "derived/target"
+    assert run(build_arguments) == 0
+    before = {
+        path.relative_to(workspace).as_posix(): path.read_bytes()
+        for path in workspace.rglob("*")
+        if path.is_file()
+    }
+
+    assert run(_diff_portable_exports_arguments(workspace)) == 0
+
+    delta = json.loads(capsys.readouterr().out)
+    assert delta["kind"] == "portable-agent-export-delta"
+    assert delta["status"] == "unchanged"
+    after = {
+        path.relative_to(workspace).as_posix(): path.read_bytes()
+        for path in workspace.rglob("*")
+        if path.is_file()
+    }
+    assert after == before
+
+
+def test_cli_rejects_portable_export_diff_absolute_path(
+    tmp_path: Path, capsys: object
+) -> None:
+    workspace = _workspace(tmp_path)
+    arguments = _diff_portable_exports_arguments(workspace)
+    arguments[arguments.index("--base") + 1] = str(
+        (workspace / "derived/base").resolve()
+    )
+
+    assert run(arguments) == 2
+    assert "Path must be relative" in capsys.readouterr().err
+
+
+def test_cli_rejects_portable_export_diff_symlink_ancestor(
+    tmp_path: Path, capsys: object
+) -> None:
+    workspace = _workspace(tmp_path)
+    derived_root = workspace / "derived"
+    derived_root.mkdir()
+    (derived_root / "base").mkdir()
+    real_parent = workspace / "real-parent"
+    real_parent.mkdir()
+    linked_parent = derived_root / "linked"
+    try:
+        linked_parent.symlink_to(real_parent, target_is_directory=True)
+    except OSError:
+        pytest.skip("Symlink creation is unavailable")
+    arguments = _diff_portable_exports_arguments(workspace)
+    arguments[arguments.index("--target") + 1] = "derived/linked/target"
 
     assert run(arguments) == 2
     assert "symbolic link" in capsys.readouterr().err
