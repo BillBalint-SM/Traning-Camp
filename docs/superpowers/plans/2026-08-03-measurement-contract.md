@@ -8,7 +8,7 @@
 
 **Tech Stack:** Python 3.10+, standard-library `hashlib`, `pathlib`, `typing`, existing `jsonschema` contract validation, canonical JSON/JSONL I/O, `KnowledgeForgeError`, `verify_portable_export`, `pytest`, `uv`, and `ruff`.
 
-**Status:** Planned.
+**Status:** Implemented and verified.
 
 ## Global Constraints
 
@@ -73,7 +73,7 @@ def verify_context_traces(
 - Consumes: existing loader result fixtures from `tests/test_portability.py`, `canonical_json_bytes`, and the public interfaces above.
 - Produces: the closed record contract and executable expectations for Task 2.
 
-- [ ] **Step 1: Add the closed JSON Schema**
+- [x] **Step 1: Add the closed JSON Schema**
 
 Define required top-level fields `format_version`, `kind`, `query_sha256`,
 `export_sha256`, `route`, `context`, `module_hashes`, `budget`,
@@ -82,7 +82,7 @@ explicit enums for route status, integer bounds for depth/timing/budget, and
 `additionalProperties: false` at every object level. Permit only `null` or a
 positive integer for `budget.max_chars`.
 
-- [ ] **Step 2: Add a valid recorder fixture test**
+- [x] **Step 2: Add a valid recorder fixture test**
 
 ```python
 def test_build_context_trace_is_metadata_only(tmp_path: Path) -> None:
@@ -104,7 +104,7 @@ def test_build_context_trace_is_metadata_only(tmp_path: Path) -> None:
     assert trace["route"]["status"] == "covered"
 ```
 
-- [ ] **Step 3: Add deterministic, status, and privacy tests**
+- [x] **Step 3: Add deterministic, status, and privacy tests**
 
 Create plain, graph-depth-1, budgeted, ambiguous, and not-covered contexts.
 Build the same trace twice and assert canonical bytes and `trace_sha256` are
@@ -112,7 +112,7 @@ identical. Assert ambiguous/not-covered traces have empty admitted and
 expanded ID arrays. Recursively inspect serialized output to reject `text`,
 raw query, absolute Windows paths, and arbitrary extra keys.
 
-- [ ] **Step 4: Add negative invariant tests**
+- [x] **Step 4: Add negative invariant tests**
 
 Use `copy.deepcopy(valid_trace)` and mutate one field per test. Cover invalid
 status, depth, negative timing, `total < route`, over-budget usage, duplicate
@@ -120,14 +120,14 @@ IDs, admitted/omitted overlap, module-hash key drift, bad digest length,
 wrong trace digest, extra schema field, and mismatched budget omission IDs.
 Each mutation must raise `KnowledgeForgeError` with a field-level message.
 
-- [ ] **Step 5: Add JSONL and export-backed verifier tests**
+- [x] **Step 5: Add JSONL and export-backed verifier tests**
 
 Write one valid record and assert `write_context_traces` creates exactly one
 canonical JSONL line. Verify it against the real temporary export, then mutate
 `export_sha256`, a module hash, and the trace file path to assert verification
 fails. Assert verification does not change bytes in the trace or export.
 
-- [ ] **Step 6: Run tests to establish the expected failure**
+- [x] **Step 6: Run tests to establish the expected failure**
 
 Run:
 
@@ -138,7 +138,7 @@ uv run pytest -q tests/test_measurement.py
 Expected: collection succeeds for the schema fixture but fails because
 `knowledge_forge.measurement` and the schema do not yet exist.
 
-- [ ] **Step 7: Commit schema and contract tests**
+- [x] **Step 7: Commit schema and contract tests**
 
 ```text
 git add forge/schemas/context-trace.schema.json tests/test_measurement.py
@@ -154,7 +154,7 @@ git commit -m "test: specify metadata-only context trace contract"
 - Consumes: Task 1 schema/tests, `validate_record`, `canonical_json_bytes`, `read_jsonl`, `write_jsonl_atomic`, `sha256_bytes`, `verify_portable_export`, and path guards.
 - Produces: all four public measurement functions with `dict[str, object]` or `list[dict[str, object]]` return values and `KnowledgeForgeError` failures.
 
-- [ ] **Step 1: Implement context normalization and hash helpers**
+- [x] **Step 1: Implement context normalization and hash helpers**
 
 Implement small single-purpose helpers that validate query non-emptiness,
 relation depth, timing keys, route status, sorted unique IDs, and the loader
@@ -164,7 +164,7 @@ omitted, and relation collections; normalize a missing budget to
 admitted module's in-memory text and compare it with its declared
 `content_sha256` before discarding the text.
 
-- [ ] **Step 2: Implement `build_context_trace`**
+- [x] **Step 2: Implement `build_context_trace`**
 
 Construct the exact record shape from the normalized route/context/budget
 values, compute `query_sha256`, sort all arrays and module-hash keys, compute
@@ -172,27 +172,27 @@ values, compute `query_sha256`, sort all arrays and module-hash keys, compute
 `validate_context_trace` before returning. Never include the source context's
 `modules` objects or query string.
 
-- [ ] **Step 3: Implement schema and semantic validation**
+- [x] **Step 3: Implement schema and semantic validation**
 
 Run `validate_record` against `forge/schemas/context-trace.schema.json`, then
 enforce subset, disjointness, route-status, budget, timing, lowercase digest,
 trace-digest, and content-free invariants. Error messages must name only the
 logical field or invariant.
 
-- [ ] **Step 4: Implement atomic JSONL writing**
+- [x] **Step 4: Implement atomic JSONL writing**
 
 Validate every record, serialize one canonical JSON object per line, and call
 the existing atomic JSONL writer. Reject an empty record list, unsafe/symlink
 destination paths, and non-regular existing inputs through existing helpers.
 
-- [ ] **Step 5: Implement export-backed verification**
+- [x] **Step 5: Implement export-backed verification**
 
 Read the trace JSONL, require at least one object, validate every record,
 verify the export once, compare each record's `export_sha256` and every
 `module_hashes` entry against the export graph, and return the validated
 records. Do not rewrite either input.
 
-- [ ] **Step 6: Run focused tests and lint**
+- [x] **Step 6: Run focused tests and lint**
 
 Run:
 
@@ -203,7 +203,7 @@ uv run ruff check forge/src/knowledge_forge/measurement.py tests/test_measuremen
 
 Expected: all measurement tests pass and Ruff reports no violations.
 
-- [ ] **Step 7: Commit the measurement implementation**
+- [x] **Step 7: Commit the measurement implementation**
 
 ```text
 git add forge/src/knowledge_forge/measurement.py forge/schemas/context-trace.schema.json tests/test_measurement.py
@@ -221,7 +221,7 @@ git commit -m "feat: add metadata-only context trace measurement"
 - Produces: `knowledge-forge record-context-trace` and
   `knowledge-forge verify-context-trace` with stable PASS summaries.
 
-- [ ] **Step 1: Register parser arguments and test helpers**
+- [x] **Step 1: Register parser arguments and test helpers**
 
 Register the exact arguments:
 
@@ -245,14 +245,14 @@ verify_trace_parser.add_argument("--export", type=Path, required=True)
 Add a temporary workspace fixture that copies `exports/portable-exports-v10`
 and a valid context JSON generated by an existing loader command/function.
 
-- [ ] **Step 2: Implement record dispatch**
+- [x] **Step 2: Implement record dispatch**
 
 Resolve the context as a regular JSON file, read it without printing it, call
 `build_context_trace` with the three timing arguments, resolve the new trace
 path inside the workspace, write one record, and print only
 `{"status":"PASS","trace_sha256":"...","record_count":1}`.
 
-- [ ] **Step 3: Implement verify dispatch**
+- [x] **Step 3: Implement verify dispatch**
 
 Resolve the trace as a regular file and the export as an existing directory,
 call `verify_context_traces`, and print only
@@ -260,14 +260,14 @@ call `verify_context_traces`, and print only
 `KnowledgeForgeError` failures must return CLI exit code `2` through the
 existing dispatcher.
 
-- [ ] **Step 4: Add CLI success and failure tests**
+- [x] **Step 4: Add CLI success and failure tests**
 
 Build a context, record it, parse the summary, verify it against the export,
 and assert the matching export digest and record count. Add missing context,
 missing trace, tampered trace, export mismatch, absolute-path, and destination
 symlink tests; assert exit code `2` and a sanitized `knowledge-forge:` error.
 
-- [ ] **Step 5: Run focused CLI tests and lint**
+- [x] **Step 5: Run focused CLI tests and lint**
 
 Run:
 
@@ -278,7 +278,7 @@ uv run ruff check forge/src/knowledge_forge/cli.py tests/test_cli_package.py
 
 Expected: all focused tests pass and Ruff reports no violations.
 
-- [ ] **Step 6: Commit the CLI slice**
+- [x] **Step 6: Commit the CLI slice**
 
 ```text
 git add forge/src/knowledge_forge/cli.py tests/test_cli_package.py
@@ -296,7 +296,7 @@ git commit -m "feat: expose context trace CLI commands"
 - Produces: local trace quickstart, complete verification evidence, and a clean
   branch ready for PR review.
 
-- [ ] **Step 1: Document metadata-only trace usage**
+- [x] **Step 1: Document metadata-only trace usage**
 
 Add exact record and verify commands:
 
@@ -308,7 +308,7 @@ uv run knowledge-forge verify-context-trace --workspace . --trace work/context-t
 State explicitly that query and module text are not stored and that the trace
 is only meaningful with the matching export digest.
 
-- [ ] **Step 2: Run the complete M3 gate**
+- [x] **Step 2: Run the complete M3 gate**
 
 Run:
 
@@ -321,14 +321,14 @@ uv run knowledge-forge verify-portable-exports --workspace . --export exports/po
 Then record and verify one real context trace in an ignored `work/` path and
 assert that its serialized bytes contain neither the query nor module text.
 
-- [ ] **Step 3: Mark the plan verified and review scope**
+- [x] **Step 3: Mark the plan verified and review scope**
 
 Update the plan status to `Implemented and verified`, run the work-state
 preflight, `git diff --check`, `git diff --stat`, and `git status --short`.
 Confirm only planned tracked paths changed and no trace fixture contains raw
 content or absolute paths.
 
-- [ ] **Step 4: Commit documentation/status and prepare integration**
+- [x] **Step 4: Commit documentation/status and prepare integration**
 
 ```text
 git add exports/README.md docs/superpowers/plans/2026-08-03-measurement-contract.md
