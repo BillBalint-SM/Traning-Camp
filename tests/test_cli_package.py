@@ -718,6 +718,22 @@ def _load_portable_context_arguments(workspace: Path, query: str) -> list[str]:
     ]
 
 
+def _load_portable_context_graph_arguments(
+    workspace: Path, query: str, depth: str
+) -> list[str]:
+    return [
+        "load-portable-context-graph",
+        "--workspace",
+        str(workspace),
+        "--export",
+        "derived/portable-exports",
+        "--query",
+        query,
+        "--depth",
+        depth,
+    ]
+
+
 def test_cli_builds_portable_exports(tmp_path: Path) -> None:
     workspace = _workspace(tmp_path)
 
@@ -918,6 +934,50 @@ def test_cli_rejects_portable_context_absolute_path(
 
     assert run(arguments) == 2
     assert "Path must be relative" in capsys.readouterr().err
+
+
+def test_cli_loads_graph_context_read_only(
+    tmp_path: Path, capsys: object
+) -> None:
+    workspace = _workspace(tmp_path)
+    assert run(_portable_exports_arguments(workspace)) == 0
+    before = {
+        path.relative_to(workspace).as_posix(): path.read_bytes()
+        for path in workspace.rglob("*")
+        if path.is_file()
+    }
+
+    assert run(
+        _load_portable_context_graph_arguments(
+            workspace, "Eszközszerződés", "1"
+        )
+    ) == 0
+
+    result = json.loads(capsys.readouterr().out)
+    assert result["module_ids"] == ["procedure.tool-contract-design"]
+    assert len(result["expanded_module_ids"]) == 9
+    assert len(result["relations"]) == 8
+    assert len(result["modules"]) == 9
+    after = {
+        path.relative_to(workspace).as_posix(): path.read_bytes()
+        for path in workspace.rglob("*")
+        if path.is_file()
+    }
+    assert after == before
+
+
+def test_cli_rejects_graph_context_depth_above_limit(
+    tmp_path: Path, capsys: object
+) -> None:
+    workspace = _workspace(tmp_path)
+    assert run(_portable_exports_arguments(workspace)) == 0
+
+    assert run(
+        _load_portable_context_graph_arguments(
+            workspace, "Eszközszerződés", "2"
+        )
+    ) == 2
+    assert "relation depth" in capsys.readouterr().err
 
 
 def test_cli_rejects_portable_export_route_absolute_path(

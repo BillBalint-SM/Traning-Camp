@@ -807,24 +807,11 @@ def _portable_module_path(output_root: Path, module_id: str) -> Path:
     )
 
 
-def load_portable_context(output_root: Path, query: str) -> dict[str, object]:
-    manifest = verify_portable_export(output_root)
-    route = _route_verified_portable_export(output_root, query)
-    module_ids_value = route.get("module_ids")
-    if not isinstance(module_ids_value, list) or not all(
-        isinstance(module_id, str) and module_id for module_id in module_ids_value
-    ):
-        raise KnowledgeForgeError("Portable export route module IDs are invalid")
-    module_ids = cast(list[str], module_ids_value)
-    if route.get("status") != "covered":
-        context = dict(route)
-        context["export_sha256"] = cast(str, manifest["export_sha256"])
-        context["modules"] = []
-        return context
-    if len(module_ids) != len(set(module_ids)):
-        raise KnowledgeForgeError("Portable export route module IDs are duplicated")
+def _load_portable_modules(
+    output_root: Path, module_ids: list[str]
+) -> list[dict[str, object]]:
     module_hashes = _export_module_hashes(output_root)
-    modules = [
+    return [
         {
             "id": module_id,
             "content_sha256": module_hashes[module_id],
@@ -834,7 +821,95 @@ def load_portable_context(output_root: Path, query: str) -> dict[str, object]:
         }
         for module_id in sorted(module_ids)
     ]
+
+
+def _route_module_ids(route: dict[str, object]) -> list[str]:
+    module_ids_value = route.get("module_ids")
+    if not isinstance(module_ids_value, list) or not all(
+        isinstance(module_id, str) and module_id for module_id in module_ids_value
+    ):
+        raise KnowledgeForgeError("Portable export route module IDs are invalid")
+    module_ids = cast(list[str], module_ids_value)
+    if len(module_ids) != len(set(module_ids)):
+        raise KnowledgeForgeError("Portable export route module IDs are duplicated")
+    return module_ids
+
+
+def _context_receipt_from_verified_export(
+    route: dict[str, object],
+    manifest: dict[str, object],
+) -> dict[str, object]:
+    _route_module_ids(route)
     context = dict(route)
     context["export_sha256"] = cast(str, manifest["export_sha256"])
-    context["modules"] = modules
+    context["modules"] = []
+    return context
+
+
+def load_portable_context(output_root: Path, query: str) -> dict[str, object]:
+    manifest = verify_portable_export(output_root)
+    route = _route_verified_portable_export(output_root, query)
+    context = _context_receipt_from_verified_export(route, manifest)
+    if route.get("status") == "covered":
+        context["modules"] = _load_portable_modules(
+            output_root, _route_module_ids(route)
+        )
+    return context
+
+
+def _validate_relation_depth(relation_depth: int) -> None:
+    if (
+        isinstance(relation_depth, bool)
+        or not isinstance(relation_depth, int)
+        or relation_depth not in {0, 1}
+    ):
+        raise KnowledgeForgeError("Portable context relation depth must be 0 or 1")
+
+
+def _direct_portable_relations(
+    output_root: Path, module_ids: list[str]
+) -> tuple[list[str], list[dict[str, str]]]:
+    seed_ids = set(module_ids)
+    edges = [
+        cast(dict[str, str], edge)
+        for edge in read_jsonl(output_root / "graph" / "edges.jsonl")
+        if cast(str, edge["source"]) in seed_ids
+        or cast(str, edge["target"]) in seed_ids
+    ]
+    relations = sorted(
+        edges,
+        key=lambda edge: (edge["source"], edge["type"], edge["target"]),
+    )
+    expanded_ids = sorted(
+        seed_ids
+        | {
+            endpoint
+            for edge in relations
+            for endpoint in (edge["source"], edge["target"])
+        }
+    )
+    return expanded_ids, relations
+
+
+def load_portable_context_graph(
+    output_root: Path, query: str, relation_depth: int
+) -> dict[str, object]:
+    _validate_relation_depth(relation_depth)
+    manifest = verify_portable_export(output_root)
+    route = _route_verified_portable_export(output_root, query)
+    context = _context_receipt_from_verified_export(route, manifest)
+    module_ids = _route_module_ids(route)
+    if route.get("status") != "covered":
+        context["expanded_module_ids"] = []
+        context["relations"] = []
+        return context
+    if relation_depth == 0:
+        context["expanded_module_ids"] = sorted(module_ids)
+        context["relations"] = []
+        context["modules"] = _load_portable_modules(output_root, module_ids)
+        return context
+    expanded_ids, relations = _direct_portable_relations(output_root, module_ids)
+    context["expanded_module_ids"] = expanded_ids
+    context["relations"] = relations
+    context["modules"] = _load_portable_modules(output_root, expanded_ids)
     return context

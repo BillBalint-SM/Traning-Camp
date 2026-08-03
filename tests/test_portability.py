@@ -12,6 +12,7 @@ from knowledge_forge.portability import (
     build_portable_exports,
     diff_portable_exports,
     load_portable_context,
+    load_portable_context_graph,
     route_portable_export,
     verify_portable_export,
 )
@@ -413,6 +414,80 @@ def test_load_portable_context_verifies_before_loading(tmp_path: Path) -> None:
 
     with pytest.raises(KnowledgeForgeError, match="missing"):
         load_portable_context(output_root, "Eszközszerződés")
+
+
+def test_load_portable_context_graph_depth_zero_preserves_route(
+    tmp_path: Path,
+) -> None:
+    output_root = tmp_path / "derived" / "portable-exports"
+    build_portable_exports(PACK_ROOT, SCHEMA_ROOT, output_root)
+
+    result = load_portable_context_graph(output_root, "Eszközszerződés", 0)
+
+    assert result["module_ids"] == ["procedure.tool-contract-design"]
+    assert result["expanded_module_ids"] == ["procedure.tool-contract-design"]
+    assert result["relations"] == []
+    assert len(result["modules"]) == 1
+
+
+def test_load_portable_context_graph_depth_one_loads_direct_neighbors(
+    tmp_path: Path,
+) -> None:
+    output_root = tmp_path / "derived" / "portable-exports"
+    build_portable_exports(PACK_ROOT, SCHEMA_ROOT, output_root)
+
+    result = load_portable_context_graph(output_root, "Eszközszerződés", 1)
+    edges = _jsonl(output_root / "graph" / "edges.jsonl")
+    seed = "procedure.tool-contract-design"
+    expected_relations = sorted(
+        (edge for edge in edges if seed in {edge["source"], edge["target"]}),
+        key=lambda edge: (edge["source"], edge["type"], edge["target"]),
+    )
+    expected_ids = sorted(
+        {seed}
+        | {
+            endpoint
+            for edge in expected_relations
+            for endpoint in (edge["source"], edge["target"])
+        }
+    )
+
+    assert result["module_ids"] == [seed]
+    assert result["expanded_module_ids"] == expected_ids
+    assert result["relations"] == expected_relations
+    assert [module["id"] for module in result["modules"]] == expected_ids
+    assert all(
+        module["content_sha256"] == sha256_bytes(module["text"].encode("utf-8"))
+        for module in result["modules"]
+    )
+
+
+@pytest.mark.parametrize(
+    "query",
+    ["Hogyan süssek kovászos kenyeret?", "MCP vagy több ügynök együttműködés?"],
+)
+def test_load_portable_context_graph_keeps_unresolved_routes_empty(
+    tmp_path: Path, query: str
+) -> None:
+    output_root = tmp_path / "derived" / "portable-exports"
+    build_portable_exports(PACK_ROOT, SCHEMA_ROOT, output_root)
+
+    result = load_portable_context_graph(output_root, query, 1)
+
+    assert result["modules"] == []
+    assert result["expanded_module_ids"] == []
+    assert result["relations"] == []
+
+
+@pytest.mark.parametrize("depth", [-1, 2, True, 1.5])
+def test_load_portable_context_graph_rejects_invalid_depth(
+    tmp_path: Path, depth: object
+) -> None:
+    output_root = tmp_path / "derived" / "portable-exports"
+    build_portable_exports(PACK_ROOT, SCHEMA_ROOT, output_root)
+
+    with pytest.raises(KnowledgeForgeError, match="relation depth"):
+        load_portable_context_graph(output_root, "Eszközszerződés", depth)
 
 
 @pytest.mark.parametrize(
