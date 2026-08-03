@@ -37,6 +37,30 @@ def resolve_regular_within(root: Path, relative_path: Path, label: str) -> Path:
     return candidate
 
 
+def resolve_existing_directory_within(
+    root: Path, relative_path: Path, label: str
+) -> Path:
+    if relative_path.is_absolute():
+        raise KnowledgeForgeError(f"Path must be relative: {relative_path.name}")
+    resolved_root = root.resolve()
+    candidate = Path(os.path.abspath(resolved_root / relative_path))
+    resolved_target = candidate.resolve()
+    if not resolved_target.is_relative_to(resolved_root):
+        raise KnowledgeForgeError(
+            f"Path escapes workspace root: {relative_path.as_posix()}"
+        )
+    current = resolved_root
+    for part in relative_path.parts:
+        current /= part
+        if current.is_symlink():
+            raise KnowledgeForgeError(
+                f"{label} must not contain a symbolic link: {current.name}"
+            )
+    if candidate.is_symlink() or not candidate.is_dir():
+        raise KnowledgeForgeError(f"{label} is not an existing directory: {relative_path.name}")
+    return candidate
+
+
 def resolve_new_directory_within(
     root: Path,
     relative_path: Path,

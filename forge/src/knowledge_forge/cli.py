@@ -25,12 +25,13 @@ from knowledge_forge.models import ExtractedDocument, InputRecord, PdfProbe
 from knowledge_forge.normalize import normalize_documents
 from knowledge_forge.package import build_package, validate_package
 from knowledge_forge.paths import (
+    resolve_existing_directory_within,
     resolve_new_directory_within,
     resolve_regular_within,
     resolve_within,
 )
 from knowledge_forge.pdf_probe import DEFAULT_PDF_LIMITS, probe_pdf
-from knowledge_forge.portability import build_portable_exports
+from knowledge_forge.portability import build_portable_exports, verify_portable_export
 from knowledge_forge.provenance import build_provenance_ledger
 from knowledge_forge.routing import route_query
 from knowledge_forge.routing_evaluation import verify_routing_evaluation
@@ -148,6 +149,12 @@ def _parser() -> argparse.ArgumentParser:
     portable_exports_parser.add_argument("--pack", type=Path, required=True)
     portable_exports_parser.add_argument("--schemas", type=Path, required=True)
     portable_exports_parser.add_argument("--output", type=Path, required=True)
+
+    verify_portable_exports_parser = subparsers.add_parser(
+        "verify-portable-exports"
+    )
+    _add_workspace(verify_portable_exports_parser)
+    verify_portable_exports_parser.add_argument("--export", type=Path, required=True)
     return parser
 
 
@@ -320,6 +327,16 @@ def _dispatch(namespace: argparse.Namespace) -> int:
                 "Portable export output",
             ),
         )
+        return 0
+    if namespace.command == "verify-portable-exports":
+        manifest = verify_portable_export(
+            resolve_existing_directory_within(
+                workspace_root,
+                namespace.export,
+                "Portable export input",
+            )
+        )
+        print(canonical_json_bytes(manifest).decode("utf-8"), end="")
         return 0
     raise KnowledgeForgeError(f"Unsupported command: {namespace.command}")
 

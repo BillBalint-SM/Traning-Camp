@@ -6,6 +6,8 @@ from typing import cast
 
 import pytest
 from knowledge_forge.errors import KnowledgeForgeError
+from knowledge_forge.hashing import sha256_bytes
+from knowledge_forge.io import canonical_json_bytes
 from knowledge_forge.portability import (
     build_portable_exports,
     verify_portable_export,
@@ -33,6 +35,21 @@ def _jsonl(path: Path) -> list[dict[str, object]]:
         cast(dict[str, object], json.loads(line))
         for line in path.read_text(encoding="utf-8").splitlines()
     ]
+
+
+def _refresh_manifest(output_root: Path) -> None:
+    manifest_path = output_root / "export.json"
+    manifest = _read_json(manifest_path)
+    entries = cast(list[dict[str, object]], manifest["files"])
+    for entry in entries:
+        relative = cast(str, entry["path"])
+        entry["sha256"] = sha256_bytes((output_root / relative).read_bytes())
+    manifest_without_digest = dict(manifest)
+    manifest_without_digest.pop("export_sha256", None)
+    manifest["export_sha256"] = sha256_bytes(
+        canonical_json_bytes(manifest_without_digest)
+    )
+    manifest_path.write_bytes(canonical_json_bytes(manifest))
 
 
 def test_build_portable_exports_renders_three_complete_profiles(
@@ -154,6 +171,67 @@ def test_verify_portable_export_rejects_manifest_digest_tamper(
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
 
     with pytest.raises(KnowledgeForgeError, match="digest mismatch"):
+        verify_portable_export(output_root)
+
+
+def test_verify_portable_export_rejects_skill_reference_drift(
+    tmp_path: Path,
+) -> None:
+    output_root = tmp_path / "derived" / "portable-exports"
+    build_portable_exports(PACK_ROOT, SCHEMA_ROOT, output_root)
+    skill_path = output_root / "skill" / "SKILL.md"
+    skill_path.write_text(
+        skill_path.read_text(encoding="utf-8").replace(
+            "references/indexes/l0.json",
+            "references/indexes/missing.json",
+        ),
+        encoding="utf-8",
+    )
+    _refresh_manifest(output_root)
+
+    with pytest.raises(KnowledgeForgeError, match="Skill reference"):
+        verify_portable_export(output_root)
+
+
+def test_verify_portable_export_rejects_rag_identity_drift(tmp_path: Path) -> None:
+    output_root = tmp_path / "derived" / "portable-exports"
+    build_portable_exports(PACK_ROOT, SCHEMA_ROOT, output_root)
+    rag_path = output_root / "rag" / "documents.jsonl"
+    records = _jsonl(rag_path)
+    records[0]["id"] = "module.unknown"
+    rag_path.write_bytes(b"".join(canonical_json_bytes(record) for record in records))
+    _refresh_manifest(output_root)
+
+    with pytest.raises(KnowledgeForgeError, match="RAG"):
+        verify_portable_export(output_root)
+
+
+def test_verify_portable_export_rejects_graph_endpoint_drift(tmp_path: Path) -> None:
+    output_root = tmp_path / "derived" / "portable-exports"
+    build_portable_exports(PACK_ROOT, SCHEMA_ROOT, output_root)
+    edges_path = output_root / "graph" / "edges.jsonl"
+    edges = _jsonl(edges_path)
+    edges[0]["target"] = "module.unknown"
+    edges_path.write_bytes(b"".join(canonical_json_bytes(edge) for edge in edges))
+    _refresh_manifest(output_root)
+
+    with pytest.raises(KnowledgeForgeError, match="graph"):
+        verify_portable_export(output_root)
+
+
+def test_verify_portable_export_rejects_profile_count_drift(tmp_path: Path) -> None:
+    output_root = tmp_path / "derived" / "portable-exports"
+    build_portable_exports(PACK_ROOT, SCHEMA_ROOT, output_root)
+    manifest_path = output_root / "export.json"
+    manifest = _read_json(manifest_path)
+    profiles = cast(dict[str, dict[str, object]], manifest["profiles"])
+    profiles["rag"]["document_count"] = 192
+    manifest["export_sha256"] = sha256_bytes(
+        canonical_json_bytes({key: value for key, value in manifest.items() if key != "export_sha256"})
+    )
+    manifest_path.write_bytes(canonical_json_bytes(manifest))
+
+    with pytest.raises(KnowledgeForgeError, match="profile"):
         verify_portable_export(output_root)
 
 
