@@ -26,6 +26,9 @@ Markdown and graph content hashes for all loaded modules.
 Ambiguous and not-covered routes return no modules, no expanded IDs, and no
 relations while preserving the verified export receipt.
 
+The receipt retains top-level `format_version: 1` and the graph payload is
+required to declare its own compatible `format_version: 1`.
+
 ## Safety and determinism
 
 - Verify the export once before routing, graph traversal, or content reads.

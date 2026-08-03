@@ -922,6 +922,7 @@ def test_cli_loads_portable_context_read_only(
     assert run(_load_portable_context_arguments(workspace, "Eszközszerződés")) == 0
 
     result = json.loads(capsys.readouterr().out)
+    assert result["format_version"] == 1
     assert result["status"] == "covered"
     assert result["module_ids"] == ["procedure.tool-contract-design"]
     export_manifest = json.loads(
@@ -972,6 +973,7 @@ def test_cli_loads_graph_context_read_only(
     ) == 0
 
     result = json.loads(capsys.readouterr().out)
+    assert result["format_version"] == 1
     assert result["module_ids"] == ["procedure.tool-contract-design"]
     assert len(result["expanded_module_ids"]) == 9
     assert len(result["relations"]) == 8
@@ -1016,6 +1018,8 @@ def test_cli_loads_budgeted_context_read_only(
     ) == 0
 
     result = json.loads(capsys.readouterr().out)
+    assert result["format_version"] == 1
+    assert result["budget"]["format_version"] == 1
     assert result["module_ids"] == ["procedure.tool-contract-design"]
     assert result["budget"]["used_chars"] <= 2000
     assert result["budget"]["omitted_module_ids"]

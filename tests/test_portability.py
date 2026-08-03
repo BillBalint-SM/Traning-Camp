@@ -224,6 +224,88 @@ def test_verify_portable_export_rejects_manifest_digest_tamper(
         verify_portable_export(output_root)
 
 
+@pytest.mark.parametrize(
+    ("format_version", "message"),
+    [
+        (None, "format version is missing"),
+        ("1", "format version is malformed"),
+        (2, "format version is incompatible"),
+    ],
+)
+def test_verify_portable_export_rejects_invalid_format_versions(
+    tmp_path: Path, format_version: object, message: str
+) -> None:
+    output_root = tmp_path / "derived" / "portable-exports"
+    build_portable_exports(PACK_ROOT, SCHEMA_ROOT, output_root)
+    manifest_path = output_root / "export.json"
+    manifest = _read_json(manifest_path)
+    if format_version is None:
+        del manifest["format_version"]
+    else:
+        manifest["format_version"] = format_version
+    manifest_without_digest = dict(manifest)
+    manifest_without_digest.pop("export_sha256", None)
+    manifest["export_sha256"] = sha256_bytes(canonical_json_bytes(manifest_without_digest))
+    manifest_path.write_bytes(canonical_json_bytes(manifest))
+
+    with pytest.raises(KnowledgeForgeError, match=message):
+        verify_portable_export(output_root)
+
+
+@pytest.mark.parametrize(
+    ("format_version", "message"),
+    [
+        (None, "canonical graph format version is missing"),
+        (True, "canonical graph format version is malformed"),
+        ("1", "canonical graph format version is malformed"),
+        (2, "canonical graph format version is incompatible"),
+    ],
+)
+def test_verify_portable_export_rejects_invalid_graph_versions(
+    tmp_path: Path, format_version: object, message: str
+) -> None:
+    output_root = tmp_path / "derived" / "portable-exports"
+    build_portable_exports(PACK_ROOT, SCHEMA_ROOT, output_root)
+    graph_path = output_root / "skill/references/graph/canonical.json"
+    graph = _read_json(graph_path)
+    if format_version is None:
+        del graph["format_version"]
+    else:
+        graph["format_version"] = format_version
+    graph_path.write_bytes(canonical_json_bytes(graph))
+    _refresh_manifest(output_root)
+
+    with pytest.raises(KnowledgeForgeError, match=message):
+        verify_portable_export(output_root)
+
+
+@pytest.mark.parametrize(
+    ("format_version", "message"),
+    [
+        (None, "routing L0 index format version is missing"),
+        (True, "routing L0 index format version is malformed"),
+        ("1", "routing L0 index format version is malformed"),
+        (2, "routing L0 index format version is incompatible"),
+    ],
+)
+def test_route_portable_export_rejects_invalid_routing_versions(
+    tmp_path: Path, format_version: object, message: str
+) -> None:
+    output_root = tmp_path / "derived" / "portable-exports"
+    build_portable_exports(PACK_ROOT, SCHEMA_ROOT, output_root)
+    index_path = output_root / "skill/references/indexes/l0.json"
+    index = _read_json(index_path)
+    if format_version is None:
+        del index["format_version"]
+    else:
+        index["format_version"] = format_version
+    index_path.write_bytes(canonical_json_bytes(index))
+    _refresh_manifest(output_root)
+
+    with pytest.raises(KnowledgeForgeError, match=message):
+        route_portable_export(output_root, "Eszközszerződés")
+
+
 def test_verify_portable_export_rejects_skill_reference_drift(
     tmp_path: Path,
 ) -> None:
@@ -338,12 +420,19 @@ def test_route_portable_export_reproduces_routing_contract(tmp_path: Path) -> No
     ambiguous = route_portable_export(output_root, "MCP vagy több ügynök együttműködés?")
 
     assert covered == {
+        "format_version": 1,
         "status": "covered",
         "area_id": "tool-execution",
         "module_ids": ["procedure.tool-contract-design"],
     }
-    assert not_covered == {"status": "not-covered", "area_id": None, "module_ids": []}
+    assert not_covered == {
+        "format_version": 1,
+        "status": "not-covered",
+        "area_id": None,
+        "module_ids": [],
+    }
     assert ambiguous == {
+        "format_version": 1,
         "status": "ambiguous",
         "area_id": None,
         "module_ids": [],
