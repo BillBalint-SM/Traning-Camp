@@ -34,6 +34,7 @@ from knowledge_forge.pdf_probe import DEFAULT_PDF_LIMITS, probe_pdf
 from knowledge_forge.portability import (
     build_portable_exports,
     diff_portable_exports,
+    load_portable_context,
     route_portable_export,
     verify_portable_export,
 )
@@ -172,6 +173,15 @@ def _parser() -> argparse.ArgumentParser:
     _add_workspace(route_portable_export_parser)
     route_portable_export_parser.add_argument("--export", type=Path, required=True)
     route_portable_export_parser.add_argument("--query", required=True)
+
+    load_portable_context_parser = subparsers.add_parser(
+        "load-portable-context"
+    )
+    _add_workspace(load_portable_context_parser)
+    load_portable_context_parser.add_argument(
+        "--export", type=Path, required=True
+    )
+    load_portable_context_parser.add_argument("--query", required=True)
     return parser
 
 
@@ -371,6 +381,17 @@ def _dispatch(namespace: argparse.Namespace) -> int:
         return 0
     if namespace.command == "route-portable-export":
         result = route_portable_export(
+            resolve_existing_directory_within(
+                workspace_root,
+                namespace.export,
+                "Portable export input",
+            ),
+            namespace.query,
+        )
+        print(canonical_json_bytes(result).decode("utf-8"), end="")
+        return 0
+    if namespace.command == "load-portable-context":
+        result = load_portable_context(
             resolve_existing_directory_within(
                 workspace_root,
                 namespace.export,

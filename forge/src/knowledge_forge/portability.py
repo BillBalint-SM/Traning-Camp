@@ -12,6 +12,7 @@ from knowledge_forge.indexes import load_areas, load_indexes
 from knowledge_forge.io import canonical_json_bytes, read_json, read_jsonl
 from knowledge_forge.models import KnowledgeModule
 from knowledge_forge.package import discover_modules
+from knowledge_forge.paths import resolve_regular_within
 from knowledge_forge.routing import route_query
 
 
@@ -778,3 +779,51 @@ def route_portable_export(output_root: Path, query: str) -> dict[str, object]:
     verify_portable_export(output_root)
     indexes = load_indexes(output_root / "skill" / "references")
     return route_query(query, indexes)
+
+
+def _portable_module_path(output_root: Path, module_id: str) -> Path:
+    if not module_id or Path(module_id).name != module_id:
+        raise KnowledgeForgeError(
+            f"Portable export module ID contains a path separator: {module_id}"
+        )
+    if output_root.is_symlink():
+        raise KnowledgeForgeError("Portable export root must not be a symbolic link")
+    relative_path = (
+        Path("skill")
+        / "references"
+        / "knowledge"
+        / f"{module_id}.md"
+    )
+    return resolve_regular_within(
+        output_root,
+        relative_path,
+        "Portable export module reference",
+    )
+
+
+def load_portable_context(output_root: Path, query: str) -> dict[str, object]:
+    route = route_portable_export(output_root, query)
+    module_ids_value = route.get("module_ids")
+    if not isinstance(module_ids_value, list) or not all(
+        isinstance(module_id, str) and module_id for module_id in module_ids_value
+    ):
+        raise KnowledgeForgeError("Portable export route module IDs are invalid")
+    module_ids = cast(list[str], module_ids_value)
+    if route.get("status") != "covered":
+        context = dict(route)
+        context["modules"] = []
+        return context
+    if len(module_ids) != len(set(module_ids)):
+        raise KnowledgeForgeError("Portable export route module IDs are duplicated")
+    modules = [
+        {
+            "id": module_id,
+            "text": _portable_module_path(output_root, module_id).read_text(
+                encoding="utf-8"
+            ),
+        }
+        for module_id in sorted(module_ids)
+    ]
+    context = dict(route)
+    context["modules"] = modules
+    return context

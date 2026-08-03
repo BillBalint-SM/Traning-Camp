@@ -706,6 +706,18 @@ def _route_portable_export_arguments(workspace: Path, query: str) -> list[str]:
     ]
 
 
+def _load_portable_context_arguments(workspace: Path, query: str) -> list[str]:
+    return [
+        "load-portable-context",
+        "--workspace",
+        str(workspace),
+        "--export",
+        "derived/portable-exports",
+        "--query",
+        query,
+    ]
+
+
 def test_cli_builds_portable_exports(tmp_path: Path) -> None:
     workspace = _workspace(tmp_path)
 
@@ -860,6 +872,45 @@ def test_cli_routes_portable_export_read_only(
         if path.is_file()
     }
     assert after == before
+
+
+def test_cli_loads_portable_context_read_only(
+    tmp_path: Path, capsys: object
+) -> None:
+    workspace = _workspace(tmp_path)
+    assert run(_portable_exports_arguments(workspace)) == 0
+    before = {
+        path.relative_to(workspace).as_posix(): path.read_bytes()
+        for path in workspace.rglob("*")
+        if path.is_file()
+    }
+
+    assert run(_load_portable_context_arguments(workspace, "Eszközszerződés")) == 0
+
+    result = json.loads(capsys.readouterr().out)
+    assert result["status"] == "covered"
+    assert result["module_ids"] == ["procedure.tool-contract-design"]
+    assert result["modules"][0]["id"] == "procedure.tool-contract-design"
+    assert "Eszközszerződés" in result["modules"][0]["text"]
+    after = {
+        path.relative_to(workspace).as_posix(): path.read_bytes()
+        for path in workspace.rglob("*")
+        if path.is_file()
+    }
+    assert after == before
+
+
+def test_cli_rejects_portable_context_absolute_path(
+    tmp_path: Path, capsys: object
+) -> None:
+    workspace = _workspace(tmp_path)
+    arguments = _load_portable_context_arguments(workspace, "Eszközszerződés")
+    arguments[arguments.index("--export") + 1] = str(
+        (workspace / "derived/portable-exports").resolve()
+    )
+
+    assert run(arguments) == 2
+    assert "Path must be relative" in capsys.readouterr().err
 
 
 def test_cli_rejects_portable_export_route_absolute_path(
