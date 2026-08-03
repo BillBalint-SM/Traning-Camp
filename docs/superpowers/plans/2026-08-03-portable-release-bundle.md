@@ -8,6 +8,8 @@
 
 **Tech Stack:** Python 3.10+, standard-library `zipfile`, `pathlib`, `tempfile`, `stat`, and `hashlib`; existing `knowledge_forge.portability.verify_portable_export`, `KnowledgeForgeError`, `pytest`, `uv`, and `ruff`.
 
+**Status:** Implemented and verified.
+
 ## Global Constraints
 
 - The input is an existing portable export directory and `export.json` remains the integrity authority.
