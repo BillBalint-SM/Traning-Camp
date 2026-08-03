@@ -1,0 +1,84 @@
+{
+  "areas": [
+    {
+      "id": "core-agent-systems",
+      "title": "Agent alaprendszerek",
+      "aliases": ["működési modell", "harness", "workflow", "autonóm döntéshozatal", "modellt agenthez"],
+      "summary": "Az agent felépítése, futtatási kerete, állapotkezelése és döntési módja.",
+      "decision_boundary": "Akkor válaszd, ha a feladat modell, kontextus, eszköz és orchestration együttműködéséről szól.",
+      "module_ids": ["principle.agent-operating-model", "principle.harness-engineering", "pattern.react-observe-act-loop", "decision-guide.workflow-or-autonomy", "checklist.agent-task-contract", "pattern.agent-status-representation", "failure-mode.model-only-system-design", "concept.observation-action-interface", "decision-guide.agent-model-selection", "checklist.harness-function-coverage", "procedure.guardrail-design", "procedure.human-escalation-design"]
+    },
+    {
+      "id": "context-and-knowledge",
+      "title": "Kontextus és tudás",
+      "aliases": ["kontextus", "memória", "keresés", "tömörítés", "kontextustömörítés", "retrieval", "visszakeresés", "hibrid", "memóriaszinteket", "sűrű", "ritka"],
+      "summary": "Kontextus, memória és retrieval.",
+      "decision_boundary": "Kontextus- és tudáskezelési feladathoz válaszd.",
+      "module_ids": ["decision-guide.memory-vs-retrieval", "pattern.context-budget-allocation", "pattern.context-compression", "principle.context-is-finite", "procedure.user-memory-lifecycle", "concept.context-cache-architecture", "procedure.system-prompt-architecture", "checklist.prompt-injection-boundary", "pattern.dynamic-skill-loading", "pattern.hierarchical-context-compression", "procedure.retrieval-pipeline-design", "decision-guide.retrieval-strategy-selection", "concept.structured-knowledge-index", "concept.api-message-context-model", "procedure.cache-stable-context-layout", "pattern.editable-context-notes", "procedure.prompt-structure-design", "decision-guide.process-instructions-or-rule-stack", "procedure.business-rule-compilation", "decision-guide.few-shot-example-selection", "procedure.status-signal-design", "decision-guide.status-update-placement", "concept.context-isolation-strategy", "decision-guide.memory-capability-evaluation", "pattern.memory-hierarchy", "decision-guide.memory-representation-selection", "checklist.memory-privacy-sanitization", "procedure.memory-consolidation", "procedure.document-chunking-strategy", "concept.dense-retrieval", "concept.sparse-retrieval", "procedure.hybrid-retrieval-fusion", "decision-guide.multimodal-information-processing", "pattern.filesystem-knowledge-organization", "checklist.knowledge-freshness-governance", "pattern.agentic-retrieval-control", "pattern.contextual-retrieval"]
+    },
+    {
+      "id": "coding-agents",
+      "title": "Coding agentek",
+      "aliases": ["coding agent", "kódagent", "kódolás", "fájlszerkesztés", "kódgenerálás", "session nélküli"],
+      "summary": "Kódalapú gondolkodás, szerkesztés, futtatás és új eszközök létrehozása.",
+      "decision_boundary": "Repository-, kódgenerálási vagy fejlesztési feladathoz válaszd.",
+      "module_ids": ["principle.code-as-meta-capability", "pattern.sessionless-coding-agent", "checklist.coding-agent-security", "procedure.coding-agent-workflow", "checklist.coding-harness-design", "procedure.coding-error-recovery", "procedure.coding-agent-search", "procedure.safe-file-editing", "principle.code-as-reasoning-medium", "pattern.executable-business-rules", "procedure.code-driven-media-generation", "pattern.code-system-adapter", "pattern.generative-ui", "principle.agent-tool-bootstrapping"]
+    },
+    {
+      "id": "tool-execution",
+      "title": "Eszközhasználat",
+      "aliases": ["eszköz", "mcp", "mcp együttműködés", "végrehajtás", "jogosultság", "eszközszerződés", "aszinkron agent", "megszakítás", "esemény", "dedikált", "skill"],
+      "summary": "Eszközszerződés, képességválasztás, eseményvezérelt futás, megszakítás és eredményellenőrzés.",
+      "decision_boundary": "Akkor válaszd, ha az agent külső műveletet, adatlekérést vagy aszinkron végrehajtást tervez.",
+      "module_ids": ["checklist.tool-safety-boundary", "pattern.tool-discovery", "procedure.tool-contract-design", "concept.tool-capability-taxonomy", "decision-guide.tool-granularity", "pattern.event-driven-agent-execution", "procedure.async-interruption-handling", "checklist.tool-result-verification", "failure-mode.unsafe-tool-expansion", "decision-guide.tool-or-skill-executor", "procedure.user-communication-during-async-execution", "principle.tool-interface-fidelity", "procedure.mcp-tool-selection", "concept.perception-execution-collaboration-tools", "checklist.isolated-tool-execution", "procedure.proactive-tool-discovery"]
+    },
+    {
+      "id": "evaluation-and-improvement",
+      "title": "Értékelés és fejlesztés",
+      "aliases": ["értékelés", "mérés", "tanítás", "fejlesztés", "agent observability", "observability", "megfigyelhetőség", "abláció", "llm judge", "statisztikailag", "futási költségét"],
+      "summary": "Mérhető agent minőség, értékelési környezet, observability és ellenőrzött képességfejlesztés.",
+      "decision_boundary": "Akkor válaszd, ha változtatás hatását, mérőszámot, tanulási módot vagy kiadási döntést kell választani.",
+      "module_ids": ["decision-guide.sft-or-rl", "pattern.experience-driven-improvement", "procedure.agent-evaluation-loop", "procedure.evaluation-environment-design", "pattern.task-distribution-coverage", "checklist.agent-observability", "decision-guide.metric-selection", "procedure.ablation-and-experiment-loop", "pattern.sft-rl-learning-boundary", "principle.environment-data-before-algorithm", "procedure.continual-improvement-release-loop", "experiment.task-success-baseline", "checklist.evaluation-environment-components", "procedure.tool-evaluation-environment", "procedure.hci-evaluation-environment", "procedure.evaluation-task-specification", "pattern.task-complexity-ladder", "checklist.objective-verifiability", "procedure.dataset-quality-loop", "concept.evaluation-metric-stack", "procedure.llm-judge-calibration", "procedure.pairwise-model-ranking", "decision-guide.model-selection-dimensions", "procedure.agent-cost-analysis", "procedure.statistical-significance-check", "procedure.benchmark-error-analysis", "procedure.improvement-hypothesis-roadmap", "pattern.two-layer-feature-flags", "procedure.prompt-sensitivity-assessment", "checklist.privacy-aware-analytics", "decision-guide.simulation-fidelity", "pattern.domain-randomization"]
+    },
+    {
+      "id": "model-post-training",
+      "title": "Modell-utótanítás",
+      "aliases": ["modell-utótanítás", "SFT RL", "folyamatjutalmat", "eredményjutalmat", "tool callingot", "jutalomjel", "desztilláció"],
+      "summary": "Súlyszintű viselkedésfejlesztés demonstrációval, jutalommal, környezettel és ellenőrzött tanítási adattal.",
+      "decision_boundary": "Akkor válaszd, ha a modell paramétereinek tartós módosításáról, tanítási jeléről vagy tréningkörnyezetéről van szó.",
+      "module_ids": ["concept.three-stage-model-development", "principle.sft-behavior-imitation", "decision-guide.sft-before-rl", "concept.agent-environment-learning-loop", "concept.variable-length-agent-policy", "procedure.sft-data-pipeline", "decision-guide.post-training-method-selection", "concept.preference-modeling", "decision-guide.rl-algorithm-selection", "principle.training-environment-data-priority", "pattern.model-simulated-environment", "checklist.training-data-quality", "concept.multi-turn-credit-assignment", "decision-guide.reward-signal-density", "decision-guide.process-or-outcome-reward", "pattern.outcome-reward-process-constraints", "procedure.tool-call-reinforcement-learning", "pattern.on-policy-distillation", "pattern.on-policy-self-distillation", "checklist.post-training-readiness"]
+    },
+    {
+      "id": "continual-evolution",
+      "title": "Folyamatos agentfejlődés",
+      "aliases": ["folyamatos fejlődés", "operatív trajektóriákból", "tapasztalatot", "görgessem vissza", "offline konszolidáció", "önfejlődés"],
+      "summary": "Operatív tapasztalat ellenőrzött emelése tudásba, instrukcióba, programba vagy paraméterbe.",
+      "decision_boundary": "Akkor válaszd, ha valódi futások tanulságából kell visszafordítható és validált képességjavítást készíteni.",
+      "module_ids": ["concept.operational-trajectory-learning-signal", "decision-guide.experience-encoding-layer", "procedure.knowledge-consolidation-from-experience", "procedure.instruction-evolution", "procedure.programmatic-skill-evolution", "procedure.parameter-update-from-experience", "principle.meta-evolution", "pattern.continual-evolution-closed-loop", "procedure.failure-diagnosis-to-improvement", "procedure.evolution-validation-release-rollback", "checklist.verifiable-improvement-boundary", "checklist.continual-evolution-safety", "pattern.offline-consolidation-cycle"]
+    },
+    {
+      "id": "interaction-and-collaboration",
+      "title": "Interakció és együttműködés",
+      "aliases": ["multimodális", "hang", "gui", "több agent", "együttműködés", "átadás", "konkurencia"],
+      "summary": "Bizonytalan érzékelés, valós idejű interakció, több-agent átadás és közös állapot kontrollja.",
+      "decision_boundary": "Akkor válaszd, ha több csatorna, felületi művelet vagy több agent közötti határ a kérdés.",
+      "module_ids": ["concept.multimodal-interaction-boundary", "failure-mode.unvalidated-autonomy", "pattern.multi-agent-context-boundaries", "decision-guide.voice-architecture-selection", "pattern.fast-slow-interaction-loop", "procedure.gui-action-grounding", "principle.planning-control-separation", "decision-guide.multi-agent-topology-selection", "procedure.multi-agent-handoff-contract", "checklist.shared-state-concurrency-control", "failure-mode.multi-agent-error-amplification"]
+    },
+    {
+      "id": "real-time-multimodal",
+      "title": "Valós idejű multimodális rendszerek",
+      "aliases": ["voice pipeline", "full duplex", "gui agent action space", "valós idejű hang", "többérzékű gui", "sim2real"],
+      "summary": "Hang-, GUI- és fizikai interakció streaminggel, megszakítással, késleltetési és biztonsági határokkal.",
+      "decision_boundary": "Akkor válaszd, ha időben folytonos hang-, képernyő- vagy fizikai megfigyelést és cselekvést kell tervezni.",
+      "module_ids": ["principle.voice-interaction-bandwidth", "decision-guide.voice-pipeline-architecture", "pattern.streaming-cascaded-voice", "procedure.streaming-turn-detection", "pattern.end-to-end-omnimodal-interaction", "pattern.full-duplex-conversation", "decision-guide.reasoning-expression-coupling", "pattern.filler-answer-split", "pattern.interaction-advice-split", "concept.fast-slow-state-interface", "checklist.expressive-speech-synthesis", "concept.gui-agent-observation-loop", "decision-guide.gui-action-space", "procedure.multisensory-gui-grounding", "checklist.mobile-automation-boundary", "procedure.real-time-latency-budget", "pattern.embodied-planning-control-stack", "procedure.sim-to-real-transfer"]
+    },
+    {
+      "id": "multi-agent-coordination",
+      "title": "Multi-agent koordináció",
+      "aliases": ["megosztott izolált kontextust", "manager worker", "kaszkádos felerősödését", "multi agent koordináció", "peer handoff", "agent society"],
+      "summary": "Több agent kontextus-, topológia-, kommunikáció-, tulajdon- és hibaterjedési szerződései.",
+      "decision_boundary": "Akkor válaszd, ha több önálló agent munkáját, átadását, közös állapotát vagy kölcsönhatását kell kontrollálni.",
+      "module_ids": ["concept.multi-agent-classification-matrix", "decision-guide.shared-or-isolated-context", "decision-guide.collaboration-topology", "decision-guide.single-or-multi-agent", "pattern.shared-context-role-switching", "procedure.multi-stage-role-switch", "procedure.cross-domain-role-switch", "pattern.isolated-context-collaboration", "pattern.filesystem-agent-bus", "procedure.agent-communication-control", "pattern.peer-review-collaboration", "pattern.manager-worker-coordination", "pattern.peer-to-peer-handoff", "procedure.cross-boundary-agent-protocol", "checklist.multi-agent-failure-review", "procedure.shared-workspace-concurrency", "checklist.cascade-containment", "concept.agent-society-simulation", "checklist.agent-economy-governance", "pattern.strategic-information-asymmetry-simulation"]
+    }
+  ]
+}
