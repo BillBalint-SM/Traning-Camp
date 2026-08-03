@@ -25,5 +25,5 @@
 
 - [x] Run full pytest, Ruff, package/routing/export/archive gates, and neutrality
   scans.
-- [ ] Record evidence, review scope, commit, push, fast-forward merge into
+- [x] Record evidence, review scope, commit, push, fast-forward merge into
   `feature`, and create the next clean dev worktree.

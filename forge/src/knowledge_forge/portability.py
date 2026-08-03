@@ -8,10 +8,11 @@ from typing import cast
 from knowledge_forge.audit import inspect_package
 from knowledge_forge.errors import KnowledgeForgeError
 from knowledge_forge.hashing import sha256_bytes
-from knowledge_forge.indexes import load_areas
+from knowledge_forge.indexes import load_areas, load_indexes
 from knowledge_forge.io import canonical_json_bytes, read_json, read_jsonl
 from knowledge_forge.models import KnowledgeModule
 from knowledge_forge.package import discover_modules
+from knowledge_forge.routing import route_query
 
 
 def _area_ownership(areas: list[dict[str, object]]) -> dict[str, str]:
@@ -771,3 +772,9 @@ def diff_portable_exports(base_root: Path, target_root: Path) -> dict[str, objec
     }
     delta["delta_sha256"] = sha256_bytes(canonical_json_bytes(delta))
     return delta
+
+
+def route_portable_export(output_root: Path, query: str) -> dict[str, object]:
+    verify_portable_export(output_root)
+    indexes = load_indexes(output_root / "skill" / "references")
+    return route_query(query, indexes)

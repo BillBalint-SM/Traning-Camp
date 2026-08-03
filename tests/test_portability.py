@@ -11,6 +11,7 @@ from knowledge_forge.io import canonical_json_bytes
 from knowledge_forge.portability import (
     build_portable_exports,
     diff_portable_exports,
+    route_portable_export,
     verify_portable_export,
 )
 
@@ -323,6 +324,28 @@ def test_diff_portable_exports_reports_valid_target_changes(tmp_path: Path) -> N
     files = cast(dict[str, object], delta["files"])
     assert "rag/documents.jsonl" in files["changed"]
     assert "graph/edges.jsonl" in files["changed"]
+
+
+def test_route_portable_export_reproduces_routing_contract(tmp_path: Path) -> None:
+    output_root = tmp_path / "derived" / "portable-exports"
+    build_portable_exports(PACK_ROOT, SCHEMA_ROOT, output_root)
+
+    covered = route_portable_export(output_root, "Eszközszerződés")
+    not_covered = route_portable_export(output_root, "Hogyan süssek kovászos kenyeret?")
+    ambiguous = route_portable_export(output_root, "MCP vagy több ügynök együttműködés?")
+
+    assert covered == {
+        "status": "covered",
+        "area_id": "tool-execution",
+        "module_ids": ["procedure.tool-contract-design"],
+    }
+    assert not_covered == {"status": "not-covered", "area_id": None, "module_ids": []}
+    assert ambiguous == {
+        "status": "ambiguous",
+        "area_id": None,
+        "module_ids": [],
+        "alternatives": ["interaction-and-collaboration", "tool-execution"],
+    }
 
 
 @pytest.mark.parametrize(
