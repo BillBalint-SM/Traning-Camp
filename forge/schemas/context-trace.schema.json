@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://knowledge-forge.local/schemas/context-trace.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format_version",
+    "kind",
+    "query_sha256",
+    "export_sha256",
+    "route",
+    "context",
+    "module_hashes",
+    "budget",
+    "timing_ms",
+    "trace_sha256"
+  ],
+  "properties": {
+    "format_version": {"const": 1},
+    "kind": {"const": "portable-context-trace"},
+    "query_sha256": {"$ref": "#/$defs/sha256"},
+    "export_sha256": {"$ref": "#/$defs/sha256"},
+    "route": {"$ref": "#/$defs/route"},
+    "context": {"$ref": "#/$defs/context"},
+    "module_hashes": {
+      "type": "object",
+      "patternProperties": {
+        "^[a-z][a-z0-9.-]*$": {"$ref": "#/$defs/sha256"}
+      },
+      "additionalProperties": false
+    },
+    "budget": {"$ref": "#/$defs/budget"},
+    "timing_ms": {"$ref": "#/$defs/timing"},
+    "trace_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "identifier": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9.-]*$"
+    },
+    "areaIdentifier": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "moduleIds": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/identifier"}
+    },
+    "route": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "area_id",
+        "primary_module_ids",
+        "alternative_area_ids"
+      ],
+      "properties": {
+        "status": {"enum": ["covered", "ambiguous", "not-covered"]},
+        "area_id": {
+          "oneOf": [{"$ref": "#/$defs/areaIdentifier"}, {"type": "null"}]
+        },
+        "primary_module_ids": {"$ref": "#/$defs/moduleIds"},
+        "alternative_area_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/areaIdentifier"}
+        }
+      }
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "relation_depth",
+        "expanded_module_ids",
+        "admitted_module_ids",
+        "omitted_module_ids",
+        "relation_count"
+      ],
+      "properties": {
+        "relation_depth": {"enum": [0, 1]},
+        "expanded_module_ids": {"$ref": "#/$defs/moduleIds"},
+        "admitted_module_ids": {"$ref": "#/$defs/moduleIds"},
+        "omitted_module_ids": {"$ref": "#/$defs/moduleIds"},
+        "relation_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["format_version", "max_chars", "used_chars", "omitted_module_ids"],
+      "properties": {
+        "format_version": {"const": 1},
+        "max_chars": {
+          "oneOf": [{"type": "integer", "minimum": 1}, {"type": "null"}]
+        },
+        "used_chars": {"type": "integer", "minimum": 0},
+        "omitted_module_ids": {"$ref": "#/$defs/moduleIds"}
+      }
+    },
+    "timing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["route", "load", "total"],
+      "properties": {
+        "route": {"type": "integer", "minimum": 0},
+        "load": {"type": "integer", "minimum": 0},
+        "total": {"type": "integer", "minimum": 0}
+      }
+    }
+  }
+}
