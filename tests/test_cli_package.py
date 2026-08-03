@@ -8,6 +8,7 @@ from knowledge_forge.cli import run
 ROOT = Path(__file__).parents[1]
 PACK_ROOT = ROOT / "pack"
 SCHEMA_ROOT = ROOT / "forge" / "schemas"
+PORTABLE_EXPORT_ROOT = ROOT / "exports" / "portable-exports-v10"
 
 
 def _workspace(tmp_path: Path) -> Path:
@@ -17,6 +18,15 @@ def _workspace(tmp_path: Path) -> Path:
     markers_path.parent.mkdir(parents=True)
     markers_path.write_text("[]\n", encoding="utf-8")
     return tmp_path
+
+
+def _portable_workspace(tmp_path: Path) -> Path:
+    workspace = _workspace(tmp_path)
+    copytree(
+        PORTABLE_EXPORT_ROOT,
+        workspace / "exports" / "portable-exports-v10",
+    )
+    return workspace
 
 
 def test_cli_build_verify_route_and_archive_package(
@@ -752,6 +762,28 @@ def _load_portable_context_budgeted_arguments(
     ]
 
 
+def _build_portable_bundle_arguments(workspace: Path) -> list[str]:
+    return [
+        "build-portable-bundle",
+        "--workspace",
+        str(workspace),
+        "--export",
+        "exports/portable-exports-v10",
+        "--bundle",
+        "dist/portable-exports-v10.zip",
+    ]
+
+
+def _verify_portable_bundle_arguments(workspace: Path) -> list[str]:
+    return [
+        "verify-portable-bundle",
+        "--workspace",
+        str(workspace),
+        "--bundle",
+        "dist/portable-exports-v10.zip",
+    ]
+
+
 def test_cli_builds_portable_exports(tmp_path: Path) -> None:
     workspace = _workspace(tmp_path)
 
@@ -764,6 +796,51 @@ def test_cli_builds_portable_exports(tmp_path: Path) -> None:
     assert manifest["kind"] == "portable-agent-exports"
     assert manifest["profiles"]["rag"]["document_count"] == 193
     assert manifest["profiles"]["graph"]["edge_count"] == 196
+
+
+def test_cli_builds_and_verifies_portable_bundle(
+    tmp_path: Path, capsys: object
+) -> None:
+    workspace = _portable_workspace(tmp_path)
+    assert run(_build_portable_bundle_arguments(workspace)) == 0
+    build_result = json.loads(capsys.readouterr().out)
+    assert build_result["status"] == "PASS"
+    assert build_result["kind"] == "portable-agent-exports"
+    assert run(_verify_portable_bundle_arguments(workspace)) == 0
+    verify_result = json.loads(capsys.readouterr().out)
+    assert verify_result["status"] == "PASS"
+    assert verify_result["export_sha256"] == build_result["export_sha256"]
+    assert verify_result["member_count"] == build_result["member_count"]
+
+
+def test_cli_reports_portable_bundle_failures(
+    tmp_path: Path, capsys: object
+) -> None:
+    workspace = _portable_workspace(tmp_path)
+    assert run(_verify_portable_bundle_arguments(workspace)) == 2
+    assert "knowledge-forge:" in capsys.readouterr().err
+
+    assert run(_build_portable_bundle_arguments(workspace)) == 0
+    capsys.readouterr()
+    assert run(_build_portable_bundle_arguments(workspace)) == 2
+    assert "already exists" in capsys.readouterr().err
+
+
+def test_cli_rejects_tampered_portable_bundle(
+    tmp_path: Path, capsys: object
+) -> None:
+    workspace = _portable_workspace(tmp_path)
+    assert run(_build_portable_bundle_arguments(workspace)) == 0
+    capsys.readouterr()
+    bundle_path = workspace / "dist" / "portable-exports-v10.zip"
+    bundle_bytes = bytearray(bundle_path.read_bytes())
+    marker_offset = bundle_bytes.find(b"portable-agent-knowledge")
+    assert marker_offset >= 0
+    bundle_bytes[marker_offset] ^= 1
+    bundle_path.write_bytes(bundle_bytes)
+
+    assert run(_verify_portable_bundle_arguments(workspace)) == 2
+    assert "knowledge-forge:" in capsys.readouterr().err
 
 
 def test_cli_verifies_portable_exports_read_only(
