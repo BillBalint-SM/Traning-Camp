@@ -54,3 +54,31 @@ content hashes, relation/budget counts, timing fields, the export digest, and
 record digests. It does not contain the query, module text, model output, or
 telemetry transport data. Verification first validates the export and then
 binds every recorded module hash to that exact export.
+
+## Read-only consumer adapter
+
+The consumer boundary can be installed independently of the repository's
+canonical `pack/` tree. Give it an extracted, verified portable export
+directory; it performs `verify → route → load → receipt` without writing to the
+export or executing tools.
+
+Build and install a wheel into a clean temporary environment:
+
+```text
+uv build --wheel --out-dir work/m4-wheel
+uv venv <temporary-venv>
+uv pip install --python <temporary-venv-python> work/m4-wheel/portable_knowledge_forge-0.1.0-py3-none-any.whl
+```
+
+Consume direct depth-1 context or add the optional model-neutral character
+budget. The result file contains the explicit context payload and a separate
+metadata-only receipt with export/module digests:
+
+```text
+<temporary-venv-python> -m knowledge_forge consume-portable-export --workspace . --export exports/portable-exports-v10 --query "Eszközszerződés" --depth 1 --receipt work/consumer-result.json
+<temporary-venv-python> -m knowledge_forge consume-portable-export --workspace . --export exports/portable-exports-v10 --query "Eszközszerződés" --depth 1 --max-chars 10000 --receipt work/consumer-result-budgeted.json
+```
+
+The adapter accepts an extracted export directory, not a ZIP path. Verify and
+extract a portable bundle first; the adapter remains read-only and does not
+enable MCP, A2A, model calls, or tool execution.

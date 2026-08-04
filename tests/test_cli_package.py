@@ -106,6 +106,74 @@ def test_cli_rejects_existing_context_trace_output(tmp_path: Path, capsys: objec
     assert trace_path.read_text(encoding="utf-8") == "sentinel\n"
 
 
+def _consumer_arguments(workspace: Path, receipt: str = "work/consumer-result.json") -> list[str]:
+    return [
+        "consume-portable-export",
+        "--workspace",
+        str(workspace),
+        "--export",
+        "exports/portable-exports-v10",
+        "--query",
+        "Eszközszerződés",
+        "--depth",
+        "1",
+        "--receipt",
+        receipt,
+    ]
+
+
+def test_cli_consumes_portable_export_and_writes_result(
+    tmp_path: Path, capsys: object
+) -> None:
+    workspace = _portable_workspace(tmp_path)
+
+    assert run(_consumer_arguments(workspace)) == 0
+
+    summary = json.loads(capsys.readouterr().out)
+    result = json.loads(
+        (workspace / "work/consumer-result.json").read_text(encoding="utf-8")
+    )
+    assert summary["status"] == "PASS"
+    assert summary["kind"] == "portable-consumer-result"
+    assert summary["module_count"] == len(result["receipt"]["admitted_module_ids"])
+    assert result["context"]["relation_depth"] == 1
+
+
+def test_cli_consumes_budgeted_portable_export(tmp_path: Path) -> None:
+    workspace = _portable_workspace(tmp_path)
+    arguments = _consumer_arguments(workspace, "work/budgeted-result.json")
+    arguments.extend(["--max-chars", "2000"])
+
+    assert run(arguments) == 0
+
+    result = json.loads(
+        (workspace / "work/budgeted-result.json").read_text(encoding="utf-8")
+    )
+    assert result["context"]["budget"]["max_chars"] == 2000
+    assert result["receipt"]["omitted_module_ids"]
+
+
+def test_cli_rejects_existing_consumer_result_without_mutation(
+    tmp_path: Path, capsys: object
+) -> None:
+    workspace = _portable_workspace(tmp_path)
+    output_path = workspace / "work/consumer-result.json"
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text("sentinel\n", encoding="utf-8")
+
+    assert run(_consumer_arguments(workspace)) == 2
+    assert "already exists" in capsys.readouterr().err
+    assert output_path.read_text(encoding="utf-8") == "sentinel\n"
+
+
+def test_cli_rejects_consumer_result_path_escape(
+    tmp_path: Path, capsys: object
+) -> None:
+    workspace = _portable_workspace(tmp_path)
+    assert run(_consumer_arguments(workspace, "../consumer-result.json")) == 2
+    assert "Path escapes workspace root" in capsys.readouterr().err
+
+
 def test_cli_build_verify_route_and_archive_package(
     tmp_path: Path, capsys: object
 ) -> None:
