@@ -9,6 +9,10 @@ from knowledge_forge.audit import (
     verify_promotion_coverage,
     verify_unit_disposition,
 )
+from knowledge_forge.consumer import (
+    consume_portable_export,
+    write_consumer_result,
+)
 from knowledge_forge.epub import extract_epub
 from knowledge_forge.errors import KnowledgeForgeError
 from knowledge_forge.indexes import load_indexes
@@ -243,6 +247,16 @@ def _parser() -> argparse.ArgumentParser:
     _add_workspace(verify_context_trace_parser)
     verify_context_trace_parser.add_argument("--trace", type=Path, required=True)
     verify_context_trace_parser.add_argument("--export", type=Path, required=True)
+
+    consume_portable_export_parser = subparsers.add_parser(
+        "consume-portable-export"
+    )
+    _add_workspace(consume_portable_export_parser)
+    consume_portable_export_parser.add_argument("--export", type=Path, required=True)
+    consume_portable_export_parser.add_argument("--query", required=True)
+    consume_portable_export_parser.add_argument("--depth", type=int, required=True)
+    consume_portable_export_parser.add_argument("--max-chars", type=int)
+    consume_portable_export_parser.add_argument("--receipt", type=Path, required=True)
     return parser
 
 
@@ -586,6 +600,37 @@ def _dispatch(namespace: argparse.Namespace) -> int:
                     "kind": "portable-context-trace",
                     "record_count": len(records),
                     "export_sha256": first_record["export_sha256"],
+                }
+            ).decode("utf-8"),
+            end="",
+        )
+        return 0
+    if namespace.command == "consume-portable-export":
+        export_root = resolve_existing_directory_within(
+            workspace_root,
+            namespace.export,
+            "Portable export input",
+        )
+        receipt_path = resolve_new_file_within(
+            workspace_root,
+            namespace.receipt,
+            "Consumer result output",
+        )
+        result = consume_portable_export(
+            export_root,
+            namespace.query,
+            namespace.depth,
+            namespace.max_chars,
+        )
+        write_consumer_result(receipt_path, result)
+        receipt = cast(dict[str, object], result["receipt"])
+        print(
+            canonical_json_bytes(
+                {
+                    "status": "PASS",
+                    "kind": "portable-consumer-result",
+                    "export_sha256": result["export_sha256"],
+                    "module_count": len(cast(list[str], receipt["admitted_module_ids"])),
                 }
             ).decode("utf-8"),
             end="",
