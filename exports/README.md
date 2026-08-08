@@ -82,3 +82,29 @@ metadata-only receipt with export/module digests:
 The adapter accepts an extracted export directory, not a ZIP path. Verify and
 extract a portable bundle first; the adapter remains read-only and does not
 enable MCP, A2A, model calls, or tool execution.
+
+## Deterministic graph strategy benchmark
+
+Build a separate, local lexical index from the verified portable RAG profile,
+then compare its depth-0 context with the canonical depth-1 graph baseline.
+The index and benchmark are derived artifacts; neither modifies the portable
+export or changes the default context loader.
+
+```text
+uv run knowledge-forge build-portable-lexical-index --workspace . --export exports/portable-exports-v10 --index derived/portable-lexical-index-v1
+uv run knowledge-forge verify-portable-lexical-index --workspace . --export exports/portable-exports-v10 --index derived/portable-lexical-index-v1
+uv run knowledge-forge benchmark-graph-strategies --workspace . --export exports/portable-exports-v10 --index derived/portable-lexical-index-v1 --suite forge/evals/graph-strategy-v1.json --max-chars 10000 --repeat-count 5 --report derived/graph-strategy-benchmark-v1.json
+```
+
+The report contains content-free route, budget, trace, integrity, selection,
+and timing evidence. Its `promote`, `do-not-promote`, or `inconclusive`
+recommendation is advisory: a human still decides whether a later retrieval
+strategy should be adopted. This milestone does not enable MCP, A2A, signing,
+or model-based answer evaluation.
+
+To create a future evaluator request without exposing its query in the output,
+provide the exact query through a local file and select a report case/strategy:
+
+```text
+uv run knowledge-forge build-answer-evaluation-request --workspace . --benchmark derived/graph-strategy-benchmark-v1.json --case-id canonical.procedure.tool-contract-design.01 --strategy-id lexical-v1 --query-file private/query.txt --request derived/answer-evaluation-request.json
+```

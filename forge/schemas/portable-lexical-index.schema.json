@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://knowledge-forge.local/schemas/portable-lexical-index.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format_version",
+    "kind",
+    "export_sha256",
+    "tokenization",
+    "scoring",
+    "postings",
+    "index_sha256"
+  ],
+  "properties": {
+    "format_version": {"const": 1},
+    "kind": {"const": "portable-lexical-index"},
+    "export_sha256": {"$ref": "#/$defs/sha256"},
+    "tokenization": {"const": "unicode-nfkc-casefold-v1"},
+    "scoring": {"$ref": "#/$defs/scoring"},
+    "postings": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/posting"}
+    },
+    "index_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "identifier": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9.-]*$"
+    },
+    "areaIdentifier": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "scoring": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "title",
+        "alias",
+        "tag",
+        "identifier",
+        "body",
+        "minimum_score",
+        "minimum_margin",
+        "result_limit"
+      ],
+      "properties": {
+        "title": {"const": 5},
+        "alias": {"const": 4},
+        "tag": {"const": 3},
+        "identifier": {"const": 3},
+        "body": {"const": 1},
+        "minimum_score": {"const": 4},
+        "minimum_margin": {"const": 2},
+        "result_limit": {"const": 1}
+      }
+    },
+    "fieldHits": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "title": {"const": 1},
+        "alias": {"const": 1},
+        "tag": {"const": 1},
+        "identifier": {"const": 1},
+        "body": {"const": 1}
+      }
+    },
+    "postingDocument": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["module_id", "area_id", "fields"],
+      "properties": {
+        "module_id": {"$ref": "#/$defs/identifier"},
+        "area_id": {"$ref": "#/$defs/areaIdentifier"},
+        "fields": {"$ref": "#/$defs/fieldHits"}
+      }
+    },
+    "posting": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["token", "documents"],
+      "properties": {
+        "token": {"type": "string", "minLength": 1},
+        "documents": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/postingDocument"}
+        }
+      }
+    }
+  }
+}

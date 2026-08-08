@@ -830,7 +830,7 @@ def _portable_module_path(output_root: Path, module_id: str) -> Path:
     )
 
 
-def _load_portable_modules(
+def load_verified_portable_modules(
     output_root: Path, module_ids: list[str]
 ) -> list[dict[str, object]]:
     module_hashes = _export_module_hashes(output_root)
@@ -875,7 +875,7 @@ def load_portable_context(output_root: Path, query: str) -> dict[str, object]:
     route = _route_verified_portable_export(output_root, query)
     context = _context_receipt_from_verified_export(route, manifest)
     if route.get("status") == "covered":
-        context["modules"] = _load_portable_modules(
+        context["modules"] = load_verified_portable_modules(
             output_root, _route_module_ids(route)
         )
     return context
@@ -942,12 +942,12 @@ def load_portable_context_graph(
     if relation_depth == 0:
         context["expanded_module_ids"] = sorted(module_ids)
         context["relations"] = []
-        context["modules"] = _load_portable_modules(output_root, module_ids)
+        context["modules"] = load_verified_portable_modules(output_root, module_ids)
         return context
     expanded_ids, relations = _direct_portable_relations(output_root, module_ids)
     context["expanded_module_ids"] = expanded_ids
     context["relations"] = relations
-    context["modules"] = _load_portable_modules(output_root, expanded_ids)
+    context["modules"] = load_verified_portable_modules(output_root, expanded_ids)
     return context
 
 
@@ -982,7 +982,7 @@ def load_portable_context_budgeted(
         )
     candidate_modules = {
         cast(str, module["id"]): module
-        for module in _load_portable_modules(output_root, candidate_ids)
+        for module in load_verified_portable_modules(output_root, candidate_ids)
     }
     ordered_ids = sorted(module_ids) + sorted(set(candidate_ids) - set(module_ids))
     loaded_ids: list[str] = []

@@ -3,6 +3,10 @@ import sys
 from pathlib import Path
 from typing import cast
 
+from knowledge_forge.answer_evaluation import (
+    build_answer_evaluation_request,
+    write_answer_evaluation_request,
+)
 from knowledge_forge.archive import build_archive
 from knowledge_forge.audit import (
     inspect_package,
@@ -25,6 +29,10 @@ from knowledge_forge.io import (
     write_jsonl_atomic,
 )
 from knowledge_forge.knowledge_map import build_knowledge_map_projection
+from knowledge_forge.lexical_index import (
+    build_portable_lexical_index,
+    verify_portable_lexical_index,
+)
 from knowledge_forge.measurement import (
     build_context_trace,
     verify_context_traces,
@@ -57,6 +65,11 @@ from knowledge_forge.portable_archive import (
 from knowledge_forge.provenance import build_provenance_ledger
 from knowledge_forge.routing import route_query
 from knowledge_forge.routing_evaluation import verify_routing_evaluation
+from knowledge_forge.strategy_benchmark import (
+    load_graph_strategy_benchmark,
+    run_graph_strategy_benchmark,
+    write_graph_strategy_benchmark,
+)
 from knowledge_forge.verify import verify_foundation
 
 
@@ -177,6 +190,67 @@ def _parser() -> argparse.ArgumentParser:
     )
     _add_workspace(verify_portable_exports_parser)
     verify_portable_exports_parser.add_argument("--export", type=Path, required=True)
+
+    build_portable_lexical_index_parser = subparsers.add_parser(
+        "build-portable-lexical-index"
+    )
+    _add_workspace(build_portable_lexical_index_parser)
+    build_portable_lexical_index_parser.add_argument(
+        "--export", type=Path, required=True
+    )
+    build_portable_lexical_index_parser.add_argument(
+        "--index", type=Path, required=True
+    )
+
+    verify_portable_lexical_index_parser = subparsers.add_parser(
+        "verify-portable-lexical-index"
+    )
+    _add_workspace(verify_portable_lexical_index_parser)
+    verify_portable_lexical_index_parser.add_argument(
+        "--export", type=Path, required=True
+    )
+    verify_portable_lexical_index_parser.add_argument(
+        "--index", type=Path, required=True
+    )
+
+    benchmark_graph_strategies_parser = subparsers.add_parser(
+        "benchmark-graph-strategies"
+    )
+    _add_workspace(benchmark_graph_strategies_parser)
+    benchmark_graph_strategies_parser.add_argument(
+        "--export", type=Path, required=True
+    )
+    benchmark_graph_strategies_parser.add_argument(
+        "--index", type=Path, required=True
+    )
+    benchmark_graph_strategies_parser.add_argument(
+        "--suite", type=Path, required=True
+    )
+    benchmark_graph_strategies_parser.add_argument(
+        "--max-chars", type=int, required=True
+    )
+    benchmark_graph_strategies_parser.add_argument(
+        "--repeat-count", type=int, required=True
+    )
+    benchmark_graph_strategies_parser.add_argument(
+        "--report", type=Path, required=True
+    )
+
+    build_answer_request_parser = subparsers.add_parser(
+        "build-answer-evaluation-request"
+    )
+    _add_workspace(build_answer_request_parser)
+    build_answer_request_parser.add_argument(
+        "--benchmark", type=Path, required=True
+    )
+    build_answer_request_parser.add_argument("--case-id", required=True)
+    build_answer_request_parser.add_argument("--strategy-id", required=True)
+    build_answer_request_parser.add_argument(
+        "--query-file", type=Path, required=True
+    )
+    build_answer_request_parser.add_argument(
+        "--request", type=Path, required=True
+    )
 
     build_portable_bundle_parser = subparsers.add_parser("build-portable-bundle")
     _add_workspace(build_portable_bundle_parser)
@@ -457,6 +531,161 @@ def _dispatch(namespace: argparse.Namespace) -> int:
             )
         )
         print(canonical_json_bytes(manifest).decode("utf-8"), end="")
+        return 0
+    if namespace.command == "build-portable-lexical-index":
+        index = build_portable_lexical_index(
+            resolve_existing_directory_within(
+                workspace_root,
+                namespace.export,
+                "Portable export input",
+            ),
+            resolve_new_directory_within(
+                workspace_root,
+                namespace.index,
+                Path("derived"),
+                "Portable lexical index output",
+            ),
+        )
+        print(
+            canonical_json_bytes(
+                {
+                    "status": "PASS",
+                    "kind": index["kind"],
+                    "export_sha256": index["export_sha256"],
+                    "index_sha256": index["index_sha256"],
+                }
+            ).decode("utf-8"),
+            end="",
+        )
+        return 0
+    if namespace.command == "verify-portable-lexical-index":
+        index = verify_portable_lexical_index(
+            resolve_existing_directory_within(
+                workspace_root,
+                namespace.export,
+                "Portable export input",
+            ),
+            resolve_existing_directory_within(
+                workspace_root,
+                namespace.index,
+                "Portable lexical index input",
+            ),
+        )
+        print(
+            canonical_json_bytes(
+                {
+                    "status": "PASS",
+                    "kind": index["kind"],
+                    "export_sha256": index["export_sha256"],
+                    "index_sha256": index["index_sha256"],
+                }
+            ).decode("utf-8"),
+            end="",
+        )
+        return 0
+    if namespace.command == "benchmark-graph-strategies":
+        report_path = resolve_new_file_within(
+            workspace_root,
+            namespace.report,
+            "Graph strategy benchmark output",
+        )
+        report = run_graph_strategy_benchmark(
+            resolve_existing_directory_within(
+                workspace_root,
+                namespace.export,
+                "Portable export input",
+            ),
+            resolve_existing_directory_within(
+                workspace_root,
+                namespace.index,
+                "Portable lexical index input",
+            ),
+            resolve_regular_within(
+                workspace_root,
+                namespace.suite,
+                "Graph strategy suite",
+            ),
+            namespace.max_chars,
+            namespace.repeat_count,
+        )
+        write_graph_strategy_benchmark(report_path, report)
+        print(
+            canonical_json_bytes(
+                {
+                    "status": "PASS",
+                    "kind": report["kind"],
+                    "decision": report["decision"],
+                    "export_sha256": report["export_sha256"],
+                    "benchmark_sha256": report["benchmark_sha256"],
+                }
+            ).decode("utf-8"),
+            end="",
+        )
+        return 0
+    if namespace.command == "build-answer-evaluation-request":
+        report = load_graph_strategy_benchmark(
+            resolve_regular_within(
+                workspace_root,
+                namespace.benchmark,
+                "Graph strategy benchmark report",
+            )
+        )
+        matching_cases = [
+            case
+            for case in cast(list[dict[str, object]], report["cases"])
+            if case["case_id"] == namespace.case_id
+        ]
+        if len(matching_cases) != 1:
+            raise KnowledgeForgeError(
+                f"Graph strategy benchmark case must resolve exactly once: {namespace.case_id}"
+            )
+        case = matching_cases[0]
+        matching_strategies = [
+            strategy
+            for strategy in cast(list[dict[str, object]], case["strategies"])
+            if strategy["strategy_id"] == namespace.strategy_id
+        ]
+        if len(matching_strategies) != 1:
+            raise KnowledgeForgeError(
+                "Graph strategy benchmark strategy must resolve exactly once: "
+                f"{namespace.strategy_id}"
+            )
+        query_path = resolve_regular_within(
+            workspace_root,
+            namespace.query_file,
+            "Answer evaluation query input",
+        )
+        try:
+            query = query_path.read_text(encoding="utf-8")
+        except OSError as error:
+            raise KnowledgeForgeError(
+                f"Cannot read answer evaluation query input: {query_path.name}"
+            ) from error
+        strategy = matching_strategies[0]
+        request = build_answer_evaluation_request(
+            namespace.case_id,
+            query,
+            namespace.strategy_id,
+            cast(dict[str, object], strategy["context_trace"]),
+            cast(dict[str, object], case["expected"])["module_ids"],
+        )
+        request_path = resolve_new_file_within(
+            workspace_root,
+            namespace.request,
+            "Answer evaluation request output",
+        )
+        write_answer_evaluation_request(request_path, request)
+        print(
+            canonical_json_bytes(
+                {
+                    "status": "PASS",
+                    "kind": request["kind"],
+                    "case_id": request["case_id"],
+                    "request_sha256": request["request_sha256"],
+                }
+            ).decode("utf-8"),
+            end="",
+        )
         return 0
     if namespace.command == "build-portable-bundle":
         manifest = build_portable_bundle(
