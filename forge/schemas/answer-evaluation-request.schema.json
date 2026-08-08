@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://knowledge-forge.local/schemas/answer-evaluation-request.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format_version",
+    "kind",
+    "case_id",
+    "query_sha256",
+    "export_sha256",
+    "strategy_id",
+    "context_trace_sha256",
+    "expected_module_ids",
+    "request_sha256"
+  ],
+  "properties": {
+    "format_version": {"const": 1},
+    "kind": {"const": "answer-evaluation-request"},
+    "case_id": {"$ref": "#/$defs/identifier"},
+    "query_sha256": {"$ref": "#/$defs/sha256"},
+    "export_sha256": {"$ref": "#/$defs/sha256"},
+    "strategy_id": {"$ref": "#/$defs/identifier"},
+    "context_trace_sha256": {"$ref": "#/$defs/sha256"},
+    "expected_module_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/identifier"}
+    },
+    "request_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "identifier": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9.-]*$"
+    }
+  }
+}
